@@ -1,0 +1,30 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  phone         String   @id
+  status        String   @default("FREE") // FREE, PAID
+  sheetId       String?
+  monthlyCount  Int      @default(0)
+  lastReset     DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Receipt {
+  id            String   @id @default(uuid())
+  userPhone     String
+  merchant      String?
+  date          String?
+  total         Float?
+  vat           Float?
+  category      String?
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+}
