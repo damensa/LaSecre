@@ -9,17 +9,11 @@ export const createCheckoutSession = async (phone: string) => {
     payment_method_types: ['card'],
     line_items: [
       {
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: 'LaSecre - Subscripció Mensual',
-          },
-          unit_amount: 1500, // 15.00 €
-        },
+        price: process.env.STRIPE_PRICE_ID, // El codi price_... que em passaràs
         quantity: 1,
       },
     ],
-    mode: 'payment',
+    mode: 'subscription',
     success_url: `${process.env.BASE_URL}/success`,
     cancel_url: `${process.env.BASE_URL}/cancel`,
     client_reference_id: phone,

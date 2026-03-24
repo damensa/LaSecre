@@ -14,6 +14,8 @@ model User {
   monthlyCount  Int      @default(0)
   lastReset     DateTime @default(now())
   createdAt     DateTime @default(now())
+  accountantEmail String?
+  stripeCustomerId String? @unique
   updatedAt     DateTime @updatedAt
 }
 

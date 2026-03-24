@@ -1,48 +1,46 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
+import { google } from 'googleapis';
 
-export const appendToSheet = async (sheetId: string, data: any) => {
-  const serviceAccountAuth = new JWT({
-    email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-  });
+const SCOPES = [
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/drive.file',
+  'https://www.googleapis.com/auth/drive',
+];
 
-  const doc = new GoogleSpreadsheet(sheetId, serviceAccountAuth);
-  await doc.loadInfo();
-  const sheet = doc.sheetsByIndex[0];
+const auth = new JWT({
+  email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+  key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  scopes: SCOPES,
+});
 
-  await sheet.addRow({
-    'ID': data.phone,
-    'Data': data.data,
-    'Concepte': data.comerç,
-    'Total': data.import_total,
-    'IVA': data.iva,
-    'Imatge': data.imageUrl,
-  });
+const drive = google.drive({ version: 'v3', auth: auth as any });
+
+export const createSheetForUser = async (phone: string) => {
+  const masterId = process.env.GOOGLE_SHEETS_TEMPLATE_ID;
+  if (!masterId) throw new Error('GOOGLE_SHEETS_TEMPLATE_ID not set');
+  
+  // En aquesta Opció B, no creem cap fitxer ni pestanya.
+  // Simplement retornem la ID del fitxer MASTER.
+  console.log(`Using Master Sheet ${masterId} for user ${phone}`);
+  return masterId;
 };
 
-export const createSheetFromTemplate = async (userEmail: string) => {
-  const serviceAccountAuth = new JWT({
-    email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    scopes: [
-      'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive'
-    ],
-  });
-
-  // Note: Cloning a sheet usually requires the Drive API.
-  // This is a simplified version using the spreadsheet ID.
-  const templateId = process.env.GOOGLE_SHEETS_TEMPLATE_ID;
-  if (!templateId) throw new Error('Template ID not configured');
-
-  // For a real implementation, we would use the Drive API to copy the file.
-  // Since we only have google-spreadsheet, we assume the sheet is already shared
-  // or we use a more complex flow. For now, let's assume the user provides their own
-  // or we have a more manual process, but I'll add the stub.
-  console.log(`Creating sheet for ${userEmail} from template ${templateId}`);
+export const appendToSheet = async (sheetId: string, data: any) => {
+  const doc = new GoogleSpreadsheet(sheetId, auth);
+  await doc.loadInfo();
+  // Utilitzem la primera pestanya del fitxer Master
+  const sheet = doc.sheetsByIndex[0];
   
-  // Return a mock ID for now or the template ID for testing
-  return templateId; 
+  // Map Gemini result back to column headers
+  // Expecting columns: ID_Usuari, Data, Comerç, Import Total, IVA, Categoria, Imatge
+  await sheet.addRow({
+    'ID_Usuari': data.phone || '',
+    'Data': data.data || '',
+    'Comerç': data.comerç || '',
+    'Import Total': data.import_total || '',
+    'IVA': data.iva || '',
+    'Categoria': data.categoria || '',
+    'Imatge': data.imageUrl || ''
+  });
 };

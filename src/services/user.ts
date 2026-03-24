@@ -29,3 +29,30 @@ export const updateUserSheet = async (phone: string, sheetId: string) => {
     data: { sheetId },
   });
 };
+
+export const updateAccountantEmail = async (phone: string, accountantEmail: string) => {
+  return await prisma.user.update({
+    where: { phone },
+    data: { accountantEmail },
+  });
+};
+
+export const updateStripeCustomerId = async (phone: string, stripeCustomerId: string) => {
+  return await prisma.user.update({
+    where: { phone },
+    data: { stripeCustomerId },
+  });
+};
+
+export const updateUserStatus = async (phone: string, status: 'FREE' | 'PAID') => {
+  return await prisma.user.update({
+    where: { phone },
+    data: { status },
+  });
+};
+
+export const getUserByStripeCustomerId = async (stripeCustomerId: string) => {
+  return await prisma.user.findUnique({
+    where: { stripeCustomerId },
+  });
+};

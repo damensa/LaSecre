@@ -3,6 +3,7 @@ import * as whatsappService from '../services/whatsapp';
 import * as userService from '../services/user';
 import * as geminiService from '../services/gemini';
 import * as sheetsService from '../services/sheets';
+import * as stripeService from '../services/stripe';
 import prisma from '../utils/prisma';
 
 export const whatsappRouter = Router();
@@ -35,28 +36,112 @@ whatsappRouter.post('/webhook', async (req, res) => {
     let user = await userService.getUser(senderPhone);
     if (!user) {
       user = await userService.registerUser(senderPhone);
-      await whatsappService.sendWhatsAppMessage(senderPhone, "Hola! Soc LaSecre. Ja t'he registrat. Envia'm una foto d'un tiquet i me'n encarrego!");
+      
+      try {
+        const sheetId = await sheetsService.createSheetForUser(senderPhone);
+        await userService.updateUserSheet(senderPhone, sheetId);
+        await whatsappService.sendWhatsAppMessage(
+          senderPhone, 
+          "Ei, jefe! Soc LaSecre. Ja t'he registrat i estic preparant el teu full de càlcul. Tens **30 dies de prova de franc** per enviar-me tots els tiquets que vulguis. Al sac!\n\nPD: Si vols que enviï el resum al teu gestor (que ja ens coneixem...), digues-me: 'gestor elseu@email.com'"
+        );
+      } catch (error) {
+        console.error('Error creating user sheet:', error);
+        await whatsappService.sendWhatsAppMessage(
+          senderPhone, 
+          "Ei, jefe! Soc LaSecre. Ja t'he registrat. Tens **30 dies de prova de franc**. Envia'm la foto del paperet i deixem de perdre el temps.\n\nPD: Si vols configurar el teu gestor: 'gestor elseu@email.com'"
+        );
+      }
       return res.sendStatus(200);
     }
 
     // 2. Handle Text
     if (messageType === 'text') {
+      const text = message.text.body.toLowerCase().trim();
+
+      // Set Accountant Email
+      if (text.startsWith('gestor')) {
+        const email = text.replace('gestor', '').trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (emailRegex.test(email)) {
+          await userService.updateAccountantEmail(senderPhone, email);
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            `Molt bé! Ja tinc l'email del teu gestor (${email}). Quan vulguis exportar el trimestre, només m'ho has de dir.`
+          );
+        } else {
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Escolti jefe, aquest email no és pas correcte. Provi així: 'gestor elteu@email.com'"
+          );
+        }
+        return res.sendStatus(200);
+      }
+
+      // Export Quarter
+      if (text.includes('exportar') || text.includes('trimestre')) {
+        await whatsappService.sendWhatsAppMessage(senderPhone, "D'acord, estic preparant el resum del trimestre... Un moment.");
+        
+        try {
+          const now = new Date();
+          const currentMonth = now.getMonth();
+          const currentYear = now.getFullYear();
+          const currentQuarter = Math.floor(currentMonth / 3) + 1;
+
+          const filePath = await require('../services/export').generateQuarterlyExcel(senderPhone, currentYear, currentQuarter);
+          
+          if (!filePath) {
+            await whatsappService.sendWhatsAppMessage(
+              senderPhone, 
+              "Ostres, no he trobat cap tiquet d'aquest trimestre per exportar. Envia'm alguna foto primer!"
+            );
+            return res.sendStatus(200);
+          }
+
+          const mediaId = await whatsappService.uploadMedia(filePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          await whatsappService.sendWhatsAppDocument(senderPhone, mediaId, `Resum_LaSecre_Q${currentQuarter}.xlsx`);
+          
+          const exportMessage = (user as any).accountantEmail 
+            ? `Aquí el tens, jefe! Al sac i ben lligat. També l'he enviat per correu a ${(user as any).accountantEmail}.`
+            : "Aquí el tens, jefe! Al sac i ben lligat. Ja li pots passar al teu gestor.";
+          
+          await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
+
+          if ((user as any).accountantEmail) {
+            // TODO: Implementar enviament d'email real aquí (p.ex. amb Nodemailer o SendGrid)
+            console.log(`Simulant enviament d'email a ${(user as any).accountantEmail} amb el fitxer ${filePath}`);
+          }
+        } catch (error) {
+          console.error('Export error:', error);
+          await whatsappService.sendWhatsAppMessage(senderPhone, "M'he liat intentant fer l'Excel. Torna-m'ho a demanar d'aquí un moment.");
+        }
+        return res.sendStatus(200);
+      }
+
       await whatsappService.sendWhatsAppMessage(
         senderPhone, 
-        "Sóc LaSecre. No em facis xerrar i envia'm una foto del tiquet, que se'ns passa el trimestre!"
+        "Molt bonic el que em dius, jefe, però jo menjo fotos de tiquets. Envia'm el paperet i deixa't de romanços. O digues 'exportar' si vols el resum."
       );
       return res.sendStatus(200);
     }
 
     // 3. Handle Image
     if (messageType === 'image') {
-      // Check limits
-      if (user.status === 'FREE' && user.monthlyCount >= 5) {
-        await whatsappService.sendWhatsAppMessage(
-          senderPhone,
-          "Escolta, ja m'has enviat 5 tiquets de franc. Per seguir treballant m'has de convidar a un parell de cafès (15 €). Vols seguir? [Enllaç Stripe]"
-        );
-        return res.sendStatus(200);
+      // Check Subscription
+      if (user.status === 'FREE') {
+        const trialDays = 30;
+        const now = new Date();
+        const trialExpiration = new Date(user.createdAt);
+        trialExpiration.setDate(trialExpiration.getDate() + trialDays);
+
+        if (now > trialExpiration) {
+          const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone,
+            `Ei jefe, el teu mes de prova s'ha acabat. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`
+          );
+          return res.sendStatus(200);
+        }
       }
 
       const mediaId = message.image.id;
@@ -98,7 +183,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
       } catch (error) {
         console.error('Error processing receipt:', error);
-        await whatsappService.sendWhatsAppMessage(senderPhone, "Ostres, m'he liat amb aquest tiquet. Torna-m'ho a provar en un moment.");
+        await whatsappService.sendWhatsAppMessage(senderPhone, "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.");
       }
     }
 
