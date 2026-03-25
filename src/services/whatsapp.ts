@@ -1,49 +1,75 @@
 import axios from 'axios';
 import fs from 'fs';
 
-const WHATSAPP_API_URL = `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+// Access env variables inside functions to ensure they are loaded after dotenv.config()
+const getWhatsAppConfig = () => ({
+  token: (process.env.WHATSAPP_TOKEN || '').trim(),
+  phoneId: (process.env.WHATSAPP_PHONE_NUMBER_ID || '').trim(),
+});
 
 export const sendWhatsAppMessage = async (to: string, message: string) => {
+  const { token, phoneId } = getWhatsAppConfig();
+  const url = `https://graph.facebook.com/v22.0/${phoneId}/messages`;
+  const normalizedTo = to.trim().replace('+', '');
+  
+  console.log(`Sending message to: ${normalizedTo}`);
+
   try {
     const response = await axios.post(
-      WHATSAPP_API_URL,
+      url,
       {
         messaging_product: 'whatsapp',
-        to,
+        to: normalizedTo,
         type: 'text',
         text: { body: message },
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       }
     );
     return response.data;
   } catch (error: any) {
-    console.error('Error sending WhatsApp message:', error.response?.data || error.message);
+    if (error.response) {
+      console.error('Meta API Error Details:', JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error('Error sending WhatsApp message:', error.message);
+    }
     throw error;
   }
 };
 
 export const downloadMedia = async (mediaId: string) => {
-  const urlResponse = await axios.get(
-    `https://graph.facebook.com/v17.0/${mediaId}`,
-    {
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
-    }
-  );
+  const { token } = getWhatsAppConfig();
   
-  const mediaUrl = (urlResponse.data as any).url;
-  const imageResponse = await axios.get(mediaUrl, {
-    headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
-    responseType: 'arraybuffer',
-  });
-  
-  return Buffer.from(imageResponse.data as ArrayBuffer).toString('base64');
+  try {
+    console.log(`[WhatsApp] Fetching media URL for ID: ${mediaId}`);
+    const urlResponse = await axios.get(
+      `https://graph.facebook.com/v22.0/${mediaId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    
+    const mediaUrl = (urlResponse.data as any).url;
+    console.log(`[WhatsApp] Downloading media from URL: ${mediaUrl}`);
+    
+    const imageResponse = await axios.get(mediaUrl, {
+      headers: { Authorization: `Bearer ${token}` },
+      responseType: 'arraybuffer',
+    });
+    
+    return Buffer.from(imageResponse.data as ArrayBuffer).toString('base64');
+  } catch (error: any) {
+    console.error('[WhatsApp] downloadMedia error:', error.response?.data || error.message);
+    throw error;
+  }
 };
+
 export const uploadMedia = async (filePath: string, fileType: string) => {
+  const { token, phoneId } = getWhatsAppConfig();
   const formData = new (require('form-data'))();
   formData.append('file', fs.createReadStream(filePath));
   formData.append('type', fileType);
@@ -51,11 +77,11 @@ export const uploadMedia = async (filePath: string, fileType: string) => {
 
   try {
     const response = await axios.post(
-      `https://graph.facebook.com/v17.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/media`,
+      `https://graph.facebook.com/v22.0/${phoneId}/media`,
       formData,
       {
         headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           ...formData.getHeaders(),
         },
       }
@@ -68,9 +94,12 @@ export const uploadMedia = async (filePath: string, fileType: string) => {
 };
 
 export const sendWhatsAppDocument = async (to: string, mediaId: string, filename: string) => {
+  const { token, phoneId } = getWhatsAppConfig();
+  const url = `https://graph.facebook.com/v22.0/${phoneId}/messages`;
+
   try {
     const response = await axios.post(
-      WHATSAPP_API_URL,
+      url,
       {
         messaging_product: 'whatsapp',
         to,
@@ -82,7 +111,7 @@ export const sendWhatsAppDocument = async (to: string, mediaId: string, filename
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       }

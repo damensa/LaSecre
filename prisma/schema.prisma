@@ -30,3 +30,8 @@ model Receipt {
   imageUrl      String?
   createdAt     DateTime @default(now())
 }
+
+model WebhookEvent {
+  messageId String   @id
+  timestamp DateTime @default(now())
+}

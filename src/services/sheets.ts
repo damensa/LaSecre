@@ -32,15 +32,16 @@ export const appendToSheet = async (sheetId: string, data: any) => {
   // Utilitzem la primera pestanya del fitxer Master
   const sheet = doc.sheetsByIndex[0];
   
-  // Map Gemini result back to column headers
-  // Expecting columns: ID_Usuari, Data, Comerç, Import Total, IVA, Categoria, Imatge
+  // Map Gemini result back to column headers exactly as they appear in the user's sheet
   await sheet.addRow({
     'ID_Usuari': data.phone || '',
-    'Data': data.data || '',
+    'Data_Registre': new Date().toLocaleString('ca-ES'),
+    'Data_Tiquet': data.data || '',
     'Comerç': data.comerç || '',
-    'Import Total': data.import_total || '',
-    'IVA': data.iva || '',
+    'Import_Total': data.import_total || '',
+    'Quota_IVA': data.iva || '',
     'Categoria': data.categoria || '',
-    'Imatge': data.imageUrl || ''
+    'Enllaç_Foto': data.imageUrl || '',
+    'Estat': 'Pendent'
   });
 };

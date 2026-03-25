@@ -18,16 +18,9 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
     orderBy: { createdAt: 'asc' }
   });
 
-  // 3. Filtrar tiquets per data
+  // 3. Filtrar tiquets per data de REGISTRE (createdAt)
   const filteredReceipts = receipts.filter(r => {
-    if (!r.date) return false;
-    try {
-      // Intentem parsejar el format DD/MM/AAAA
-      const receiptDate = parse(r.date, 'dd/MM/yyyy', new Date());
-      return receiptDate >= startDate && receiptDate <= endDate;
-    } catch (e) {
-      return false;
-    }
+    return r.createdAt >= startDate && r.createdAt <= endDate;
   });
 
   if (filteredReceipts.length === 0) {
@@ -39,20 +32,24 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
   const worksheet = workbook.addWorksheet(`Trimestre ${quarter} - ${year}`);
 
   worksheet.columns = [
-    { header: 'Data', key: 'date', width: 15 },
+    { header: 'Data Registre', key: 'createdAt', width: 20 },
+    { header: 'Data Tiquet', key: 'date', width: 15 },
     { header: 'Comerç', key: 'merchant', width: 25 },
     { header: 'Import Total', key: 'total', width: 15 },
-    { header: 'IVA Estimat', key: 'vat', width: 15 },
+    { header: 'Quota_IVA', key: 'vat', width: 15 },
     { header: 'Categoria', key: 'category', width: 20 },
+    { header: 'Enllaç Foto', key: 'imageUrl', width: 30 },
   ];
 
   filteredReceipts.forEach(r => {
     worksheet.addRow({
+      createdAt: r.createdAt.toLocaleString('ca-ES'),
       date: r.date,
       merchant: r.merchant,
       total: r.total,
       vat: r.vat,
-      category: r.category
+      category: r.category,
+      imageUrl: r.imageUrl
     });
   });
 

@@ -1,6 +1,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+console.log('--- SERVER STARTUP ---');
+console.log('Token Prefix:', process.env.WHATSAPP_TOKEN?.substring(0, 15));
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 import express from 'express';

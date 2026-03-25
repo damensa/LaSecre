@@ -1,0 +1,2 @@
+[2026-03-25T17:13:51.024Z] {"error":{"message":"Error validating access token: Session has expired on Wednesday, 25-Mar-26 10:00:00 PDT. The current time is Wednesday, 25-Mar-26 10:13:50 PDT.","type":"OAuthException","code":190,"error_subcode":463,"fbtrace_id":"AKnXZIJIpK_13mCCkBxYLjU"}}
+[2026-03-25T17:16:23.530Z] {"error":{"message":"Error validating access token: Session has expired on Wednesday, 25-Mar-26 10:00:00 PDT. The current time is Wednesday, 25-Mar-26 10:16:23 PDT.","type":"OAuthException","code":190,"error_subcode":463,"fbtrace_id":"AMMVrgG-Z9b6uJ17EAvBYkQ"}}
