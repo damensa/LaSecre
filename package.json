@@ -7,7 +7,14 @@
     "dev": "nodemon --watch \"src/**/*.ts\" --watch .env --exec ts-node src/index.ts",
     "build": "tsc",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "test:live": "ts-node tests/test-server-live.ts",
+    "test:env": "ts-node tests/check-env.ts",
+    "test:sheets": "ts-node tests/test-sheet-write.ts",
+    "test:gemini": "ts-node tests/test-gemini-parser.ts",
+    "test:stripe": "cross-env NODE_ENV=test ts-node tests/test-stripe-mock.ts",
+    "test:business-limit": "ts-node tests/test-business-limit.ts",
+    "test": "npm run test:live && npm run test:env && npm run test:sheets && npm run test:gemini && npm run test:business-limit"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +42,7 @@
     "@types/google-spreadsheet": "^3.3.2",
     "@types/node": "^25.5.0",
     "@types/stripe": "^8.0.416",
+    "cross-env": "^10.1.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"

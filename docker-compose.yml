@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  lasecre-bot:
+    build: .
+    container_name: lasecre_bot
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./prisma:/app/prisma
+    env_file:
+      - .env

@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import * as whatsappService from '../services/whatsapp';
 import fs from 'fs';
+import path from 'path';
 import * as userService from '../services/user';
 import * as geminiService from '../services/gemini';
 import * as sheetsService from '../services/sheets';
+import * as airtableService from '../services/airtable';
 import * as stripeService from '../services/stripe';
 import prisma from '../utils/prisma';
 
@@ -34,30 +36,40 @@ whatsappRouter.post('/webhook', async (req, res) => {
       const changes = entry?.changes?.[0];
       const value = changes?.value;
       const message = value?.messages?.[0];
+      const statusUpdate = value?.statuses?.[0];
+
+      if (statusUpdate) {
+        console.log(`[Webhook] Received status update (${statusUpdate.status}) for ID: ${statusUpdate.id}`);
+        return;
+      }
 
       if (!message) return;
 
       const messageId = message.id;
       const senderPhone = message.from;
       const messageType = message.type;
+      const text = message.text?.body || '';
+
+      console.log(`[Webhook] Processing ${messageType} from ${senderPhone}: "${text}" (ID: ${messageId})`);
 
       // 3. Persistent Deduplication (Memory + DB)
-      if (processedMessages.has(messageId)) return;
+      if (processedMessages.has(messageId)) {
+        console.log(`[Deduplicator] Ignoring duplicate message (Memory): ${messageId}`);
+        return;
+      }
+      processedMessages.add(messageId);
       
       try {
-        const existingEvent = await (prisma as any).webhookEvent.findUnique({
-          where: { messageId }
+        await (prisma as any).webhookEvent.create({
+          data: { messageId, status: 'RECEIVED' }
         });
-        if (existingEvent) {
-          processedMessages.add(messageId);
+      } catch (dbError: any) {
+        // P2002 is Prisma unique constraint error
+        if (dbError.code === 'P2002') {
+          console.log(`[Deduplicator] Ignoring duplicate message (DB): ${messageId}`);
           return;
         }
-
-        await (prisma as any).webhookEvent.create({
-          data: { messageId }
-        });
-      } catch (dbError) {
-        console.warn('DB Deduplication unavailable (waiting for prisma generate):', (dbError as any).message);
+        console.warn('DB Deduplication warning:', dbError.message);
       }
       processedMessages.add(messageId);
 
@@ -72,6 +84,18 @@ whatsappRouter.post('/webhook', async (req, res) => {
         try {
           const sheetId = await sheetsService.createSheetForUser(senderPhone);
           await userService.updateUserSheet(senderPhone, sheetId);
+
+          // Send welcome logo
+          try {
+            const logoPath = path.join(process.cwd(), 'Logo_small.png');
+            if (fs.existsSync(logoPath)) {
+              const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
+              await whatsappService.sendWhatsAppImage(senderPhone, mediaId, "Ei, jefe! Soc LaSecre.");
+            }
+          } catch (logoError) {
+            console.error('Error sending welcome logo:', logoError);
+          }
+
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
             "Ei, jefe! Soc LaSecre. Ja t'he registrat i estic preparant el teu full de càlcul. Tens **30 dies de prova de franc** per enviar-me tots els tiquets que vulguis. Al sac!\n\nPD: Si vols que enviï el resum al teu gestor (que ja ens coneixem...), digues-me: 'gestor elseu@email.com'"
@@ -88,31 +112,44 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
       // 5. Handle Text
       if (messageType === 'text') {
-        const text = message.text.body.toLowerCase().trim();
+        const text = message.text.body;
 
-        // Set Accountant Email
-        if (text.startsWith('gestor')) {
-          const email = text.replace('gestor', '').trim();
+        // Fetch last 6 messages for context
+        const history = await (prisma as any).message.findMany({
+          where: { userPhone: senderPhone },
+          orderBy: { createdAt: 'desc' },
+          take: 6
+        });
+
+        const formattedHistory = history.reverse().map((m: any) => ({
+          role: (m.role === 'model' ? 'model' : 'user') as 'model' | 'user',
+          parts: [{ text: m.content }]
+        }));
+
+        const result = await geminiService.chatWithContext(formattedHistory, text);
+
+        // Save user message
+        await (prisma as any).message.create({
+          data: { userPhone: senderPhone, role: 'user', content: text }
+        });
+
+        // Save model message
+        await (prisma as any).message.create({
+          data: { userPhone: senderPhone, role: 'model', content: result.resposta }
+        });
+
+        // Process intents
+        if (result.intent === 'SET_ACCOUNTANT' && result.extra?.email) {
+          const email = result.extra.email;
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          
           if (emailRegex.test(email)) {
             await userService.updateAccountantEmail(senderPhone, email);
-            await whatsappService.sendWhatsAppMessage(
-              senderPhone, 
-              `Molt bé! Ja tinc l'email del teu gestor (${email}). Quan vulguis exportar el trimestre, només m'ho has de dir.`
-            );
-          } else {
-            await whatsappService.sendWhatsAppMessage(
-              senderPhone, 
-              "Escolti jefe, aquest email no és pas correcte. Provi així: 'gestor elteu@email.com'"
-            );
           }
-          return;
         }
 
-        // Export Quarter
-        if (text.includes('exportar') || text.includes('trimestre')) {
-          await whatsappService.sendWhatsAppMessage(senderPhone, "D'acord, estic preparant el resum del trimestre... Un moment.");
+        if (result.intent === 'EXPORT_QUARTER') {
+          // Send the explanatory message first (from Gemini)
+          await whatsappService.sendWhatsAppMessage(senderPhone, result.resposta);
           
           try {
             const now = new Date();
@@ -123,24 +160,16 @@ whatsappRouter.post('/webhook', async (req, res) => {
             const filePath = await require('../services/export').generateQuarterlyExcel(senderPhone, currentYear, currentQuarter);
             
             if (!filePath) {
-              await whatsappService.sendWhatsAppMessage(
-                senderPhone, 
-                "Ostres, no he trobat cap tiquet d'aquest trimestre per exportar. Envia'm alguna foto primer!"
-              );
-              return;
-            }
-
-            const mediaId = await whatsappService.uploadMedia(filePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-            await whatsappService.sendWhatsAppDocument(senderPhone, mediaId, `Resum_LaSecre_Q${currentQuarter}.xlsx`);
-            
-            const exportMessage = (user as any).accountantEmail 
-              ? `Aquí el tens, jefe! Al sac i ben lligat. També l'he enviat per correu a ${(user as any).accountantEmail}.`
-              : "Aquí el tens, jefe! Al sac i ben lligat. Ja li pots passar al teu gestor.";
-            
-            await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
-
-            if ((user as any).accountantEmail) {
-              console.log(`Simulant enviament d'email a ${(user as any).accountantEmail} amb el fitxer ${filePath}`);
+              await whatsappService.sendWhatsAppMessage(senderPhone, "Ostres, no he trobat cap tiquet d'aquest trimestre per exportar. Envia'm alguna foto primer!");
+            } else {
+              const mediaId = await whatsappService.uploadMedia(filePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+              await whatsappService.sendWhatsAppDocument(senderPhone, mediaId, `Resum_LaSecre_Q${currentQuarter}.xlsx`);
+              
+              const exportMessage = (user as any).accountantEmail 
+                ? `Aquí el tens, jefe! Enviat també per correu a ${(user as any).accountantEmail}.`
+                : "Aquí el tens, jefe! Ja li pots passar al teu gestor.";
+              
+              await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
             }
           } catch (error) {
             console.error('Export error:', error);
@@ -149,10 +178,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
           return;
         }
 
-        await whatsappService.sendWhatsAppMessage(
-          senderPhone, 
-          "Molt bonic el que em dius, jefe, però jo menjo fotos de tiquets. Envia'm el paperet i deixa't de romanços. O digues 'exportar' si vols el resum."
-        );
+        // Default response for simple chat or other intents handled by Gemini's text
+        await whatsappService.sendWhatsAppMessage(senderPhone, result.resposta);
         return;
       }
 
@@ -162,16 +189,11 @@ whatsappRouter.post('/webhook', async (req, res) => {
         if (!currentUser) return;
 
         if (currentUser.status === 'FREE') {
-          const trialDays = 30;
-          const now = new Date();
-          const trialExpiration = new Date(currentUser.createdAt);
-          trialExpiration.setDate(trialExpiration.getDate() + trialDays);
-
-          if (now > trialExpiration) {
+          if (currentUser.monthlyCount >= 15) {
             const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
             await whatsappService.sendWhatsAppMessage(
               senderPhone,
-              `Ei jefe, el teu mes de prova s'ha acabat. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`
+              `Ei jefe, ja has arribat al límit de 15 tiquets de prova. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`
             );
             return;
           }
@@ -182,7 +204,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
         // 4. Background processing logic
         try {
           // Register as PROCESSING immediately
-          await prisma.webhookEvent.upsert({
+          await (prisma as any).webhookEvent.upsert({
             where: { messageId },
             update: { status: 'PROCESSING' },
             create: { messageId, status: 'PROCESSING' }
@@ -217,11 +239,29 @@ whatsappRouter.post('/webhook', async (req, res) => {
           });
 
           if (currentUser.sheetId) {
-            await sheetsService.appendToSheet(currentUser.sheetId, {
+            // Keep Google Sheets for backward compatibility if needed, 
+            // but we primary use Airtable now
+            try {
+              await sheetsService.appendToSheet(currentUser.sheetId, {
+                ...analysis,
+                phone: senderPhone,
+                imageUrl: finalImageUrl
+              });
+            } catch (sheetError) {
+              console.warn('[Sheets] Backup upload failed:', sheetError);
+            }
+          }
+
+          // --- NEW: Save to Airtable (Permanent storage with images) ---
+          try {
+            await airtableService.createTicket({
               ...analysis,
               phone: senderPhone,
               imageUrl: finalImageUrl
             });
+            console.log('[Airtable] Ticket created successfully');
+          } catch (airtableError: any) {
+            console.error('[Airtable] Error saving ticket:', airtableError.message);
           }
 
           await userService.incrementMonthlyCount(senderPhone);
@@ -229,7 +269,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           await whatsappService.sendWhatsAppMessage(senderPhone, responseMsg);
 
           // Update status to PROCESSED
-          await prisma.webhookEvent.update({
+          await (prisma as any).webhookEvent.update({
             where: { messageId },
             data: { status: 'PROCESSED' }
           });
@@ -239,7 +279,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           await whatsappService.sendWhatsAppMessage(senderPhone, "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.");
           // Optionally update status to ERROR here
           try {
-            await prisma.webhookEvent.update({
+            await (prisma as any).webhookEvent.update({
               where: { messageId },
               data: { status: 'ERROR', errorMessage: (error as any).message }
             });

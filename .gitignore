@@ -1,4 +1,7 @@
-*.json
+webhook_body.json
+automatitzacions-*.json
+background_error.log
+background_error.old*
 node_modules
 .env
 dist

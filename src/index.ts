@@ -21,7 +21,20 @@ app.use('/whatsapp', whatsappRouter);
 app.use('/stripe', stripeRouter);
 
 app.get('/health', (req, res) => {
-  res.send('LaSecre is alive and kicking!');
+  const envVars = {
+    whatsapp: !!process.env.WHATSAPP_TOKEN && !!process.env.WHATSAPP_PHONE_NUMBER_ID,
+    gemini: !!process.env.GEMINI_API_KEY,
+    stripe: !!process.env.STRIPE_API_KEY,
+    google: !!process.env.GOOGLE_SHEETS_CLIENT_EMAIL && !!process.env.GOOGLE_SHEETS_PRIVATE_KEY,
+  };
+  
+  const isHealthy = Object.values(envVars).every(v => v);
+  
+  res.status(isHealthy ? 200 : 500).json({
+    status: isHealthy ? 'ok' : 'error',
+    message: 'LaSecre is alive and kicking!',
+    checks: envVars
+  });
 });
 
 app.listen(PORT, () => {

@@ -34,4 +34,14 @@ model Receipt {
 model WebhookEvent {
   messageId String   @id
   timestamp DateTime @default(now())
+  status    String   @default("RECEIVED") // RECEIVED, PROCESSING, PROCESSED, ERROR
+  errorMessage String?
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  userPhone String
+  role      String   // 'user' or 'model'
+  content   String
+  createdAt DateTime @default(now())
 }

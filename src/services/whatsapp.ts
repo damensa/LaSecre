@@ -122,3 +122,57 @@ export const sendWhatsAppDocument = async (to: string, mediaId: string, filename
     throw error;
   }
 };
+
+export const updateProfilePhoto = async (filePath: string) => {
+  const { token, phoneId } = getWhatsAppConfig();
+  const formData = new (require('form-data'))();
+  formData.append('file', fs.createReadStream(filePath));
+  formData.append('messaging_product', 'whatsapp');
+
+  try {
+    const response = await axios.post(
+      `https://graph.facebook.com/v22.0/${phoneId}/profile_photo`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...formData.getHeaders(),
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error updating profile photo:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const sendWhatsAppImage = async (to: string, mediaId: string, caption?: string) => {
+  const { token, phoneId } = getWhatsAppConfig();
+  const url = `https://graph.facebook.com/v22.0/${phoneId}/messages`;
+
+  try {
+    const response = await axios.post(
+      url,
+      {
+        messaging_product: 'whatsapp',
+        to,
+        type: 'image',
+        image: {
+          id: mediaId,
+          ...(caption && { caption })
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error sending WhatsApp image:', error.response?.data || error.message);
+    throw error;
+  }
+};
