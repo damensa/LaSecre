@@ -12,9 +12,10 @@ import { stripeRouter } from './routes/stripe';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware for Stripe Webhook needs raw body
+// Middleware
 app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
+app.use(express.static('public'));
 
 // Routes
 app.use('/whatsapp', whatsappRouter);

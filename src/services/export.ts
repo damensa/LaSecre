@@ -1,33 +1,25 @@
 import { Workbook } from 'exceljs';
 import path from 'path';
 import fs from 'fs';
-import prisma from '../utils/prisma';
-import { startOfQuarter, endOfQuarter, parse } from 'date-fns';
+import { startOfQuarter, endOfQuarter } from 'date-fns';
+import * as airtableService from './airtable';
 
 export const generateQuarterlyExcel = async (userPhone: string, year: number, quarter: number) => {
   // 1. Calcular dates
-  // Quarter és 1-indexed (1, 2, 3, 4)
   const startDate = startOfQuarter(new Date(year, (quarter - 1) * 3, 1));
   const endDate = endOfQuarter(new Date(year, (quarter - 1) * 3, 1));
 
-  // 2. Cercar tiquets
-  // Nota: Com que la data es guarda com a String (DD/MM/AAAA), primer els portem tots i filtrem en memòria.
-  // En el futur, seria millor guardar la data en format ISO o camp DateTime.
-  const receipts = await prisma.receipt.findMany({
-    where: { userPhone },
-    orderBy: { createdAt: 'asc' }
-  });
+  console.log(`[Export] Generating Excel for ${userPhone}, Quarter ${quarter} of ${year}`);
 
-  // 3. Filtrar tiquets per data de REGISTRE (createdAt)
-  const filteredReceipts = receipts.filter(r => {
-    return r.createdAt >= startDate && r.createdAt <= endDate;
-  });
+  // 2. Cercar tiquets a Airtable per obtenir enllaços permanents
+  const filteredReceipts = await airtableService.getTicketsByQuarter(userPhone, startDate, endDate);
 
-  if (filteredReceipts.length === 0) {
+  if (!filteredReceipts || filteredReceipts.length === 0) {
+    console.log(`[Export] No receipts found in Airtable for ${userPhone} in Q${quarter}`);
     return null;
   }
 
-  // 4. Crear l'Excel
+  // 3. Crear l'Excel (la resta de la lògica es manté igual)
   const workbook = new Workbook();
   const worksheet = workbook.addWorksheet(`Trimestre ${quarter} - ${year}`);
 
@@ -41,7 +33,13 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
     { header: 'Enllaç Foto', key: 'imageUrl', width: 30 },
   ];
 
-  filteredReceipts.forEach(r => {
+  worksheet.getRow(1).fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFE0E0E0' }
+  };
+
+  filteredReceipts.forEach((r: any) => {
     worksheet.addRow({
       createdAt: r.createdAt.toLocaleString('ca-ES'),
       date: r.date,
@@ -52,14 +50,6 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
       imageUrl: r.imageUrl
     });
   });
-
-  // Estil de la capçalera
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
 
   // 5. Guardar fitxer temporal
   const tmpDir = path.join(process.cwd(), 'tmp');
