@@ -6,8 +6,17 @@ services:
     container_name: lasecre_bot
     restart: always
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./prisma:/app/prisma
     env_file:
       - .env
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: lasecre_redis
+    restart: always
+    volumes:
+      - ./redis-data:/data

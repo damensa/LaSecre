@@ -23,13 +23,6 @@ export const incrementMonthlyCount = async (phone: string) => {
   });
 };
 
-export const updateUserSheet = async (phone: string, sheetId: string) => {
-  return await prisma.user.update({
-    where: { phone },
-    data: { sheetId },
-  });
-};
-
 export const updateAccountantEmail = async (phone: string, accountantEmail: string) => {
   return await prisma.user.update({
     where: { phone },

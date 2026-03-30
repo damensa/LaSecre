@@ -1,23 +1,39 @@
 <!DOCTYPE html>
 <html lang="ca">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaSecre - El teu assistent de tiquets per WhatsApp</title>
+    <title>LaSecre - El teu assistent de tiquets i factures per WhatsApp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .brand-orange { background-color: #FF8C00; }
-        .brand-orange-hover:hover { background-color: #E67E00; }
-        .lang-btn.active { font-weight: bold; text-decoration: underline; text-underline-offset: 4px; color: #FF8C00; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .brand-orange {
+            background-color: #FF8C00;
+        }
+
+        .brand-orange-hover:hover {
+            background-color: #E67E00;
+        }
+
+        .lang-btn.active {
+            font-weight: bold;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: #FF8C00;
+        }
     </style>
 </head>
+
 <body class="bg-[#FFFDF9] text-gray-900 overflow-x-hidden">
 
     <!-- Header / Logo & Lang Switcher -->
     <header class="py-6 px-6 max-w-6xl mx-auto flex justify-between items-center">
-        <img src="/logo_realistic.png" alt="LaSecre Logo" class="w-32 md:w-48 h-auto object-contain">
+        <img src="logo_realistic.png" alt="LaSecre Logo" class="w-32 md:w-48 h-auto object-contain">
         <div class="flex space-x-4 text-sm font-medium">
             <button onclick="setLanguage('ca')" id="btn-ca" class="lang-btn active">CA</button>
             <span class="text-gray-300">|</span>
@@ -27,13 +43,20 @@
 
     <!-- Hero Section -->
     <section class="max-w-4xl mx-auto px-6 py-12 text-center">
-        <h1 id="hero-title" class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-6" data-i18n="hero-title">
-            Llença els teus tiquets a la paperera <span class="text-gray-400 font-light">(després de fer-los una foto).</span>
+        <h1 id="hero-title" class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight mb-6"
+            data-i18n="hero-title">
+            Llença els teus tiquets i factures a la paperera <span class="text-gray-400 font-light">(després de fer-los una
+                foto).</span>
         </h1>
-        <p id="hero-subtitle" class="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed" data-i18n="hero-subtitle">
-            LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets, t'ordena l'IVA i et prepara el resum per al gestor. Sense apps. Sense Excels. Només WhatsApp.
+        <p id="hero-subtitle" class="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
+            data-i18n="hero-subtitle">
+            LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per
+            al gestor. Sense apps. Sense Excels. Només WhatsApp.
         </p>
-        <a id="hero-cta" href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis." class="inline-block brand-orange text-white font-bold text-xl px-10 py-5 rounded-full shadow-lg brand-orange-hover transition-all transform hover:scale-105 active:scale-95" data-i18n="hero-cta">
+        <a id="hero-cta"
+            href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+            class="inline-block brand-orange text-white font-bold text-xl px-10 py-5 rounded-full shadow-lg brand-orange-hover transition-all transform hover:scale-105 active:scale-95"
+            data-i18n="hero-cta">
             Prova-ho ara mateix
         </a>
     </section>
@@ -41,7 +64,8 @@
     <!-- Secció "El Dolor" -->
     <section class="bg-gray-50 py-20 px-6">
         <div class="max-w-3xl mx-auto text-center">
-            <h2 id="pain-title" class="text-3xl font-bold mb-8" data-i18n="pain-title">Encara guardes tiquets arrugats a la guantera del cotxe?</h2>
+            <h2 id="pain-title" class="text-3xl font-bold mb-8" data-i18n="pain-title">Encara guardes tiquets i factures arrugats a
+                la guantera del cotxe?</h2>
             <p id="pain-text" class="text-xl text-gray-700 leading-relaxed italic" data-i18n="pain-text">
                 "Passes els diumenges a la tarda picant factures davant d'un Excel? Estàs perdent temps i diners."
             </p>
@@ -50,22 +74,27 @@
 
     <!-- Secció "Com funciona" -->
     <section class="py-20 px-6 max-w-5xl mx-auto">
-        <h2 id="how-title" class="text-3xl font-bold text-center mb-16 underline decoration-[#FF8C00] decoration-4 underline-offset-8" data-i18n="how-title">Com funciona</h2>
+        <h2 id="how-title"
+            class="text-3xl font-bold text-center mb-16 underline decoration-[#FF8C00] decoration-4 underline-offset-8"
+            data-i18n="how-title">Com funciona</h2>
         <div class="grid md:grid-cols-3 gap-12">
             <div class="text-center p-6 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div class="text-4xl mb-4">📸</div>
                 <h3 id="step1-title" class="text-xl font-bold mb-3" data-i18n="step1-title">Fes la foto</h3>
-                <p id="step1-text" class="text-gray-600" data-i18n="step1-text">Com si fos un missatge a la família. Ràpid i sense complicacions.</p>
+                <p id="step1-text" class="text-gray-600" data-i18n="step1-text">Com si fos un missatge a la família.
+                    Ràpid i sense complicacions.</p>
             </div>
             <div class="text-center p-6 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div class="text-4xl mb-4">🧠</div>
                 <h3 id="step2-title" class="text-xl font-bold mb-3" data-i18n="step2-title">Jo m'encarrego</h3>
-                <p id="step2-text" class="text-gray-600" data-i18n="step2-text">LaSecre llegeix l'import, la data i el comerç al moment gràcies a la intel·ligència artificial.</p>
+                <p id="step2-text" class="text-gray-600" data-i18n="step2-text">LaSecre llegeix l'import, la data i el
+                    comerç al moment gràcies a la intel·ligència artificial.</p>
             </div>
             <div class="text-center p-6 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div class="text-4xl mb-4">🏆</div>
                 <h3 id="step3-title" class="text-xl font-bold mb-3" data-i18n="step3-title">I el teu gestor?</h3>
-                <p id="step3-text" class="text-gray-600" data-i18n="step3-text">Et voldrà fer un monument. Rep l'Excel polit i totes les fotos digitalitzades. Sense taques de cafè ni papers perduts.</p>
+                <p id="step3-text" class="text-gray-600" data-i18n="step3-text">Et voldrà fer un monument. Rep l'Excel
+                    polit i totes les fotos digitalitzades. Sense taques de cafè ni papers perduts.</p>
             </div>
         </div>
     </section>
@@ -75,10 +104,15 @@
         <div class="max-w-2xl mx-auto">
             <h2 id="price-title" class="text-4xl font-bold mb-6" data-i18n="price-title">Transparent i honest</h2>
             <p id="price-promo" class="text-2xl font-light mb-10" data-i18n="price-promo">
-                El teu primer mes és de regal. Després, <span class="text-[#FF8C00] font-bold">5€ al mes</span>. Sense permanència.
+                El teu primer mes és de regal. Després, <span class="text-[#FF8C00] font-bold">5€ al mes</span>. Sense
+                permanència.
             </p>
-            <p id="price-footer" class="text-gray-400 mb-8 italic" data-i18n="price-footer">"Te'n vas quan vulguis, però no ho faràs."</p>
-            <a id="price-cta" href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis." class="inline-block brand-orange text-white font-bold text-lg px-8 py-4 rounded-full brand-orange-hover transition-all" data-i18n="price-cta">
+            <p id="price-footer" class="text-gray-400 mb-8 italic" data-i18n="price-footer">"Te'n vas quan vulguis, però
+                no ho faràs."</p>
+            <a id="price-cta"
+                href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+                class="inline-block brand-orange text-white font-bold text-lg px-8 py-4 rounded-full brand-orange-hover transition-all"
+                data-i18n="price-cta">
                 Vull començar ara
             </a>
         </div>
@@ -91,9 +125,12 @@
 
     <!-- Sticky Mobile CTA -->
     <div class="fixed bottom-6 right-6 md:hidden">
-        <a id="mobile-cta" href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis." class="brand-orange text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
+        <a id="mobile-cta"
+            href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+            class="brand-orange text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
             </svg>
         </a>
     </div>
@@ -101,16 +138,16 @@
     <script>
         const translations = {
             ca: {
-                "hero-title": 'Llença els teus tiquets a la paperera <span class="text-gray-400 font-light">(després de fer-los una foto).</span>',
-                "hero-subtitle": "LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets, t'ordena l'IVA i et prepara el resum per al gestor. Sense apps. Sense Excels. Només WhatsApp.",
+                "hero-title": 'Llença els teus tiquets i factures a la paperera <span class="text-gray-400 font-light">(després de fer-los una foto).</span>',
+                "hero-subtitle": "LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per al gestor. Sense apps. Sense Excels. Només WhatsApp.",
                 "hero-cta": "Prova-ho ara mateix",
-                "pain-title": "Encara guardes tiquets arrugats a la guantera del cotxe?",
+                "pain-title": "Encara guardes tiquets i factures arrugats a la guantera del cotxe?",
                 "pain-text": '\"Passes els diumenges a la tarda picant factures davant d\'un Excel? Estàs perdent temps i diners.\"',
                 "how-title": "Com funciona",
                 "step1-title": "Fes la foto",
                 "step1-text": "Com si fos un missatge a la família. Ràpid i sense complicacions.",
                 "step2-title": "Jo m'encarrego",
-                "step2-text": "LaSecre llegeix l'import, la data i el comerç al moment gràcies a la intel·ligència artificial.",
+                "step2-text": "LaSecre llegeix l'import, la data i el comerç del tiquet o factura al moment gràcies a la intel·ligència artificial.",
                 "step3-title": "I el teu gestor?",
                 "step3-text": "Et voldrà fer un monument. Rep l'Excel polit i totes les fotos digitalitzades. Sense taques de cafè ni papers perduts.",
                 "price-title": "Transparent i honest",
@@ -121,16 +158,16 @@
                 "wa-msg": "Hola LaSecre, vull el meu primer mes gratis."
             },
             es: {
-                "hero-title": 'Tira tus tickets a la papelera <span class="text-gray-400 font-light">(después de hacerles una foto).</span>',
-                "hero-subtitle": "LaSecre es el asistente por WhatsApp que lee tus tickets, te ordena el IVA y te prepara el resumen para el gestor. Sin apps. Sin Excels. Solo WhatsApp.",
+                "hero-title": 'Tira tus tickets y facturas a la papelera <span class="text-gray-400 font-light">(después de hacerles una foto).</span>',
+                "hero-subtitle": "LaSecre es el asistente por WhatsApp que lee tus tickets y facturas, te ordena el IVA y te prepara el resumen para el gestor. Sin apps. Sin Excels. Solo WhatsApp.",
                 "hero-cta": "Pruébalo ahora mismo",
-                "pain-title": "¿Aún guardas tickets arrugados en la guantera del coche?",
+                "pain-title": "¿Aún guardas tickets y facturas arrugados en la guantera del coche?",
                 "pain-text": '\"¿Pasas los domingos por la tarde picando facturas frente a un Excel? Estás perdiendo tiempo y dinero.\"',
                 "how-title": "Cómo funciona",
                 "step1-title": "Haz la foto",
                 "step1-text": "Como si fuera un mensaje a la familia. Rápido y sin complicaciones.",
                 "step2-title": "Yo me encargo",
-                "step2-text": "LaSecre lee el importe, la fecha y el comercio al momento gracias a la inteligencia artificial.",
+                "step2-text": "LaSecre lee el importe, la fecha y el comercio del ticket o factura al momento gracias a la inteligencia artificial.",
                 "step3-title": "¿Y tu gestor?",
                 "step3-text": "Te querrá hacer un monumento. Recibe el Excel limpio y todas las fotos digitalitzadas. Sin manchas de café ni papeles perdidos.",
                 "price-title": "Transparente y honesto",
@@ -144,7 +181,7 @@
 
         function setLanguage(lang) {
             localStorage.setItem('lasecre_lang', lang);
-            
+
             // Actualitzar textos
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -174,4 +211,5 @@
         setLanguage(savedLang);
     </script>
 </body>
+
 </html>

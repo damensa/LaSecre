@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import * as userService from '../services/user';
 import * as geminiService from '../services/gemini';
-import * as sheetsService from '../services/sheets';
 import * as airtableService from '../services/airtable';
 import * as stripeService from '../services/stripe';
 import prisma from '../utils/prisma';
@@ -81,32 +80,21 @@ whatsappRouter.post('/webhook', async (req, res) => {
       if (!user) {
         user = await userService.registerUser(senderPhone);
         
+        // Send welcome logo (realistic photography)
         try {
-          const sheetId = await sheetsService.createSheetForUser(senderPhone);
-          await userService.updateUserSheet(senderPhone, sheetId);
-
-          // Send welcome logo
-          try {
-            const logoPath = path.join(process.cwd(), 'Logo_small.png');
-            if (fs.existsSync(logoPath)) {
-              const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
-              await whatsappService.sendWhatsAppImage(senderPhone, mediaId, "Ei, jefe! Soc LaSecre.");
-            }
-          } catch (logoError) {
-            console.error('Error sending welcome logo:', logoError);
+          const logoPath = path.join(process.cwd(), 'Logo_small.png');
+          if (fs.existsSync(logoPath)) {
+            const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
+            await whatsappService.sendWhatsAppImage(senderPhone, mediaId, "Ei, jefe! Soc LaSecre.");
           }
-
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Ei, jefe! Soc LaSecre. Ja t'he registrat i estic preparant el teu full de càlcul. Tens **30 dies de prova de franc** per enviar-me tots els tiquets que vulguis. Al sac!\n\nPD: Si vols que enviï el resum al teu gestor (que ja ens coneixem...), digues-me: 'gestor elseu@email.com'"
-          );
-        } catch (error) {
-          console.error('Error creating user sheet:', error);
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Ei, jefe! Soc LaSecre. Ja t'he registrat. Tens **30 dies de prova de franc**. Envia'm la foto del paperet i deixem de perdre el temps.\n\nPD: Si vols configurar el teu gestor: 'gestor elseu@email.com'"
-          );
+        } catch (logoError) {
+          console.error('Error sending welcome logo:', logoError);
         }
+
+        await whatsappService.sendWhatsAppMessage(
+          senderPhone, 
+          "Ei, jefe! Soc LaSecre. Ja t'he registrat i estic a punt per rebre els teus tiquets. Tens **30 dies de prova de franc** per enviar-me tot el que vulguis. Al sac!\n\nPD: Si vols que enviï el resum al teu gestor (que ja ens coneixem...), digues-me: 'gestor elseu@email.com'"
+        );
         return;
       }
 
@@ -213,17 +201,6 @@ whatsappRouter.post('/webhook', async (req, res) => {
           const base64Image = await whatsappService.downloadMedia(mediaId);
           const analysis = await geminiService.analyzeReceipt(base64Image);
 
-          // TODO: Fix Google Drive quota issue for Service Account
-          // let driveUrl = '';
-          // try {
-          //   const fileName = `tiquet_${senderPhone}_${Date.now()}.jpg`;
-          //   driveUrl = await require('../services/drive').uploadImage(base64Image, fileName);
-          //   console.log(`[Drive] Image uploaded to ${driveUrl}`);
-          // } catch (driveError: any) {
-          //   const driveErrorMsg = driveError.response?.data ? JSON.stringify(driveError.response.data) : driveError.message;
-          //   fs.appendFileSync('background_error.log', `[${new Date().toISOString()}] Drive Error: ${JSON.stringify(driveErrorMsg)}\n`);
-          // }
-
           const finalImageUrl = `https://graph.facebook.com/v17.0/${mediaId}`; // Revert to Meta link for now
 
           await prisma.receipt.create({
@@ -238,21 +215,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             }
           });
 
-          if (currentUser.sheetId) {
-            // Keep Google Sheets for backward compatibility if needed, 
-            // but we primary use Airtable now
-            try {
-              await sheetsService.appendToSheet(currentUser.sheetId, {
-                ...analysis,
-                phone: senderPhone,
-                imageUrl: finalImageUrl
-              });
-            } catch (sheetError) {
-              console.warn('[Sheets] Backup upload failed:', sheetError);
-            }
-          }
-
-          // --- NEW: Save to Airtable (Permanent storage with images) ---
+          // --- Save to Airtable (Permanent storage with images) ---
           try {
             await airtableService.createTicket({
               ...analysis,

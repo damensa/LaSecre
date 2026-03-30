@@ -10,7 +10,6 @@ generator client {
 model User {
   phone         String   @id
   status        String   @default("FREE") // FREE, PAID
-  sheetId       String?
   monthlyCount  Int      @default(0)
   lastReset     DateTime @default(now())
   createdAt     DateTime @default(now())

@@ -3,18 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "npx prisma generate && npx prisma migrate deploy && node dist/index.js",
     "dev": "nodemon --watch \"src/**/*.ts\" --watch .env --exec ts-node src/index.ts",
     "build": "tsc",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "test:live": "ts-node tests/test-server-live.ts",
-    "test:env": "ts-node tests/check-env.ts",
-    "test:sheets": "ts-node tests/test-sheet-write.ts",
     "test:gemini": "ts-node tests/test-gemini-parser.ts",
     "test:stripe": "cross-env NODE_ENV=test ts-node tests/test-stripe-mock.ts",
     "test:business-limit": "ts-node tests/test-business-limit.ts",
-    "test": "npm run test:live && npm run test:env && npm run test:sheets && npm run test:gemini && npm run test:business-limit"
+    "test": "npm run test:live && npm run test:gemini && npm run test:business-limit"
   },
   "keywords": [],
   "author": "",
@@ -29,9 +27,6 @@
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "form-data": "^4.0.5",
-    "google-auth-library": "^10.6.2",
-    "google-spreadsheet": "^5.2.0",
-    "googleapis": "^144.0.0",
     "prisma": "^6.19.2",
     "stripe": "^20.4.1"
   },
@@ -39,7 +34,6 @@
     "@types/axios": "^0.9.36",
     "@types/exceljs": "^0.5.3",
     "@types/express": "^5.0.6",
-    "@types/google-spreadsheet": "^3.3.2",
     "@types/node": "^25.5.0",
     "@types/stripe": "^8.0.416",
     "cross-env": "^10.1.0",
