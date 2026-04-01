@@ -23,8 +23,13 @@ export const createTicket = async (data: any) => {
               'Data_Registre': new Date().toISOString(),
               'Data_Tiquet': data.data || '',
               'Comerç': data.comerç || '',
+              'CIF': data.cif || '',
+              'Num_Factura': data.numero_factura || '',
+              'Tipus_Document': data.tipus_document || '',
               'Import_Total': data.import_total || 0,
-              'Quota_IVA': data.iva || 0,
+              'Quota_IVA': data.import_iva || 0,
+              'Percentatge_IVA': data.percentatge_iva || 0,
+              'Base_Imposable': data.base_imposable || 0,
               'Categoria': data.categoria || '',
               'Estat': 'Pendent',
               // Airtable Attachment field expects an array of objects with a 'url' property
@@ -79,8 +84,13 @@ export const getTicketsByQuarter = async (userPhone: string, startDate: Date, en
       createdAt: new Date(r.fields['Data_Registre']),
       date: r.fields['Data_Tiquet'],
       merchant: r.fields['Comerç'],
+      cif: r.fields['CIF'],
+      invoiceNumber: r.fields['Num_Factura'],
+      invoiceType: r.fields['Tipus_Document'],
       total: r.fields['Import_Total'],
       vat: r.fields['Quota_IVA'],
+      vatPercentage: r.fields['Percentatge_IVA'],
+      baseAmount: r.fields['Base_Imposable'],
       category: r.fields['Categoria'],
       imageUrl: r.fields['Foto']?.[0]?.url || ''
     }));

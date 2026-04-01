@@ -25,7 +25,12 @@ model Receipt {
   date          String?
   total         Float?
   vat           Float?
+  vatPercentage Float?
+  baseAmount    Float?
   category      String?
+  cif           String?
+  invoiceNumber String?
+  invoiceType   String?
   imageUrl      String?
   createdAt     DateTime @default(now())
 }

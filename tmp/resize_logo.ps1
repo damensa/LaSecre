@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
-$imagePath = "C:\Users\dave_\.gemini\antigravity\scratch\lasecre\Logo.png"
-$outputPath = "C:\Users\dave_\.gemini\antigravity\scratch\lasecre\Logo_small.png"
+$imagePath = "C:\Users\dave_\.gemini\antigravity\scratch\lasecre\logo nou.png"
+$outputPath = "C:\Users\dave_\.gemini\antigravity\scratch\lasecre\logo_nou_small.png"
 
 $img = [System.Drawing.Image]::FromFile($imagePath)
 $newImg = New-Object System.Drawing.Bitmap(800, 800)

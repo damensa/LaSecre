@@ -82,10 +82,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
         
         // Send welcome logo (realistic photography)
         try {
-          const logoPath = path.join(process.cwd(), 'Logo_small.png');
+          const logoPath = path.join(process.cwd(), 'logo_nou_small.png');
           if (fs.existsSync(logoPath)) {
             const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
-            await whatsappService.sendWhatsAppImage(senderPhone, mediaId, "Ei, jefe! Soc LaSecre.");
+            await whatsappService.sendWhatsAppImage(senderPhone, mediaId);
           }
         } catch (logoError) {
           console.error('Error sending welcome logo:', logoError);
@@ -176,19 +176,29 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const currentUser = await userService.getUser(senderPhone);
         if (!currentUser) return;
 
+        const lastMessages = await (prisma as any).message.findMany({
+          where: { userPhone: senderPhone, role: 'model' },
+          orderBy: { createdAt: 'desc' },
+          take: 2
+        });
+        const historyText = lastMessages.map((m: any) => m.content).join(' ');
+        const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText);
+        const langHint = isSpanish ? "Castellano" : "Català";
+
         if (currentUser.status === 'FREE') {
           if (currentUser.monthlyCount >= 15) {
             const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
-            await whatsappService.sendWhatsAppMessage(
-              senderPhone,
-              `Ei jefe, ja has arribat al límit de 15 tiquets de prova. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`
-            );
+            const limitMsg = isSpanish 
+              ? `Epa jefe, ya has llegado al límite de 15 tickets de prueba. ¿Te ha gustado ahorrar tiempo? Para seguir con LaSecre y no volver a hacer Excels a mano, suscríbete por solo **5 €/mes** aquí: ${checkoutUrl}`
+              : `Ei jefe, ja has arribat al límit de 15 tiquets de prova. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`;
+            await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
             return;
           }
         }
 
         const mediaId = message.image.id;
-        await whatsappService.sendWhatsAppMessage(senderPhone, "Ho estic mirant... un moment.");
+        const waitMsg = isSpanish ? "Lo estoy mirando... un momento." : "Ho estic mirant... un moment.";
+        await whatsappService.sendWhatsAppMessage(senderPhone, waitMsg);
         // 4. Background processing logic
         try {
           // Register as PROCESSING immediately
@@ -199,9 +209,19 @@ whatsappRouter.post('/webhook', async (req, res) => {
           });
 
           const base64Image = await whatsappService.downloadMedia(mediaId);
-          const analysis = await geminiService.analyzeReceipt(base64Image);
+          const analysis = await geminiService.analyzeReceipt(base64Image, langHint);
 
-          const finalImageUrl = `https://graph.facebook.com/v17.0/${mediaId}`; // Revert to Meta link for now
+          // Save image to public folder to allow Airtable to download it
+          const host = req.get('host');
+          const baseUrl = process.env.PUBLIC_URL || `https://${host}`;
+          const uploadsDir = path.join(process.cwd(), 'public', 'temp_uploads');
+          if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+          }
+          const imagePath = path.join(uploadsDir, `${mediaId}.jpg`);
+          fs.writeFileSync(imagePath, Buffer.from(base64Image, 'base64'));
+
+          const finalImageUrl = `${baseUrl}/temp_uploads/${mediaId}.jpg`;
 
           await prisma.receipt.create({
             data: {
@@ -209,8 +229,13 @@ whatsappRouter.post('/webhook', async (req, res) => {
               merchant: analysis.comerç,
               date: analysis.data,
               total: analysis.import_total,
-              vat: analysis.iva,
+              vat: analysis.import_iva,
+              vatPercentage: analysis.percentatge_iva,
+              baseAmount: analysis.base_imposable,
               category: analysis.categoria,
+              cif: analysis.cif,
+              invoiceNumber: analysis.numero_factura,
+              invoiceType: analysis.tipus_document,
               imageUrl: finalImageUrl
             }
           });
@@ -228,7 +253,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           }
 
           await userService.incrementMonthlyCount(senderPhone);
-          const responseMsg = `Ei, jefe. Ja tinc el tiquet de ${analysis.comerç} per ${analysis.import_total} €. Guardat i llistat per desgravar. Ara agafa el paper, fes-ne una pilota i a la paperera, que només agafa pols. Seguim.`;
+          const responseMsg = analysis.resposta_lasecre || `¡Recibido! He registrado tu gasto de ${analysis.import_total} € en ${analysis.comerç}. Ya lo tienes en tu panel de Effiguard. Recuerda guardar el papel en tu carpeta de seguridad.`;
           await whatsappService.sendWhatsAppMessage(senderPhone, responseMsg);
 
           // Update status to PROCESSED
@@ -239,7 +264,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
         } catch (error) {
           console.error('Error processing receipt:', error);
-          await whatsappService.sendWhatsAppMessage(senderPhone, "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.");
+          const errorMsg = isSpanish 
+             ? "Oye jefe, esta foto está muy borrosa y no veo nada. Vuelve a intentarlo o Hacienda no te devolverá ni un céntimo de esto."
+             : "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.";
+          await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);
           // Optionally update status to ERROR here
           try {
             await (prisma as any).webhookEvent.update({
