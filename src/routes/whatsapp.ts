@@ -81,7 +81,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
         user = await userService.registerUser(senderPhone);
         
         // Language detection based on the first message
-        const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(text);
+        // Prioritize Catalan specific words to avoid false positives with "el"
+        const isCatalan = /\b(vull|meu|tiquet|amb|per|els)\b/i.test(text);
+        const isSpanish = !isCatalan;
         
         // 1. Send welcome logo
         try {
