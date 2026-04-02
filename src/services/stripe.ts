@@ -14,8 +14,8 @@ export const createCheckoutSession = async (phone: string) => {
       },
     ],
     mode: 'subscription',
-    success_url: `${process.env.BASE_URL}/success`,
-    cancel_url: `${process.env.BASE_URL}/cancel`,
+    success_url: `${process.env.BASE_URL || 'https://lasecre.vercel.app'}/success`,
+    cancel_url: `${process.env.BASE_URL || 'https://lasecre.vercel.app'}/cancel`,
     client_reference_id: phone,
     tax_id_collection: {
       enabled: true,
