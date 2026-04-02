@@ -57,7 +57,7 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
       vatPercentage: r.vatPercentage,
       vat: r.vat,
       category: r.category,
-      imageUrl: r.imageUrl
+      imageUrl: r.imageUrl ? { text: '🔗 Veure tiquet', hyperlink: r.imageUrl, tooltip: 'Obrir imatge' } : ''
     });
   });
 
