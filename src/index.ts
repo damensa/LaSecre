@@ -8,6 +8,7 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 import express from 'express';
 import { whatsappRouter } from './routes/whatsapp';
 import { stripeRouter } from './routes/stripe';
+import * as stripeService from './services/stripe';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,19 @@ app.use(express.static('public'));
 // Routes
 app.use('/whatsapp', whatsappRouter);
 app.use('/stripe', stripeRouter);
+
+// Short redirect to Stripe Checkout
+app.get('/p/:phone', async (req, res) => {
+  const phone = req.params.phone;
+  try {
+    const checkoutUrl = await stripeService.createCheckoutSession(phone);
+    if (!checkoutUrl) throw new Error('No checkout URL generated');
+    res.redirect(checkoutUrl);
+  } catch (error: any) {
+    console.error('[ShortURL] Error redirecting to Stripe:', error.message);
+    res.status(500).send('Error redirigint al pagament. Si us plau, proveu-ho més tard.');
+  }
+});
 
 app.get('/health', (req, res) => {
   const envVars = {

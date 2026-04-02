@@ -142,25 +142,19 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const diffTime = Math.abs(now.getTime() - createdAt.getTime());
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         
-        console.log(`[TrialCheck] User: ${senderPhone}, Days: ${diffDays}, Limit: ${trialDays}`);
-
         if (diffDays > trialDays) {
           try {
             const isSpanish = /[¿¡]|\b(quiero|mi|papeleo|pasa|por)\b/i.test(incomingText);
-            const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
+            const shortUrl = `${process.env.BASE_URL || 'https://la-secre-hazel.vercel.app'}/p/${senderPhone}`;
             
             const limitMsg = isSpanish 
-              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
-              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
+              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${shortUrl}`
+              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${shortUrl}`;
             
             await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
             return;
           } catch (stripeError: any) {
-            console.error('[Stripe] Error creating checkout session:', stripeError.message);
-            // Temporary debug message to see the error in WhatsApp
-            const debugMsg = `⚠️ [DEBUG] Error Stripe: ${stripeError.message}. Verifica que STRIPE_PRICE_ID estigui configurat a Vercel.`;
-            await whatsappService.sendWhatsAppMessage(senderPhone, debugMsg);
-            return; // Block here so it doesn't go to Gemini
+            console.error('[Stripe] Error creating short link:', stripeError.message);
           }
         }
       }
