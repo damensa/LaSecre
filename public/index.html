@@ -55,10 +55,22 @@
         </p>
         <a id="hero-cta"
             href="https://wa.me/34628022085?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
-            class="inline-block brand-orange text-white font-bold text-xl px-10 py-5 rounded-full shadow-lg brand-orange-hover transition-all transform hover:scale-105 active:scale-95"
+            class="inline-block brand-orange text-white font-bold text-xl px-10 py-5 rounded-full shadow-lg brand-orange-hover transition-all transform hover:scale-105 active:scale-95 mb-8"
             data-i18n="hero-cta">
             Prova-ho ara mateix
         </a>
+
+        <!-- Video Demo -->
+        <div class="mt-12 flex justify-center px-4">
+            <div class="max-w-[320px] w-full rounded-3xl overflow-hidden shadow-2xl border-[6px] border-white/80 bg-black relative">
+                <!-- Efecte de brillantor al voltant -->
+                <div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none rounded-2xl"></div>
+                <video class="w-full h-auto" autoplay loop muted playsinline>
+                    <source src="Lasecre Video.mp4" type="video/mp4">
+                    El teu navegador no suporta la reproducció de vídeos.
+                </video>
+            </div>
+        </div>
     </section>
 
     <!-- Secció "El Dolor" -->
@@ -95,6 +107,32 @@
                 <h3 id="step3-title" class="text-xl font-bold mb-3" data-i18n="step3-title">I el teu gestor?</h3>
                 <p id="step3-text" class="text-gray-600" data-i18n="step3-text">Et voldrà fer un monument. Rep l'Excel
                     polit i totes les fotos digitalitzades. Sense taques de cafè ni papers perduts.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Secció Excel Demostració -->
+    <section class="bg-[#FFFDF9] py-20 px-6 border-y border-orange-100">
+        <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20">
+            <div class="flex-1 text-center md:text-left max-w-lg">
+                <h2 id="excel-title" class="text-3xl md:text-4xl font-bold mb-6 text-gray-900 leading-tight" data-i18n="excel-title">
+                    L'Excel pel teu gestor, només demanant-ho
+                </h2>
+                <p id="excel-text" class="text-lg md:text-xl text-gray-700 leading-relaxed mb-8" data-i18n="excel-text">
+                    Quan s'acabi el trimestre, només has de dir-li "exporta l'excel" i LaSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.
+                </p>
+                <div class="inline-flex items-center gap-2 bg-orange-50 px-5 py-3 rounded-full text-sm font-semibold shadow-sm text-orange-900 border border-orange-200">
+                    <span class="text-xl">✨</span> <span data-i18n="excel-badge">Més ràpid impossible</span>
+                </div>
+            </div>
+            <div class="w-full max-w-[280px] md:max-w-[300px]">
+                <div class="rounded-[2rem] overflow-hidden shadow-2xl border-[6px] border-white/80 bg-black relative transform md:rotate-2 hover:rotate-0 transition-transform duration-300">
+                    <!-- Efecte de brillantor al voltant -->
+                    <div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none rounded-[1.5rem]"></div>
+                    <video class="w-full h-auto relative z-0" autoplay loop muted playsinline>
+                        <source src="LaSecre_excel video.mp4" type="video/mp4">
+                    </video>
+                </div>
             </div>
         </div>
     </section>
@@ -155,7 +193,10 @@
                 "price-footer": '\"Te\'n vas quan vulguis, però no ho faràs.\"',
                 "price-cta": "Vull començar ara",
                 "copyright": "&copy; 2026 LaSecre. Tots els drets reservats.",
-                "wa-msg": "Hola LaSecre, vull el meu primer mes gratis."
+                "wa-msg": "Hola LaSecre, vull el meu primer mes gratis.",
+                "excel-title": "L'Excel pel teu gestor, només demanant-ho",
+                "excel-text": "Quan s'acabi el trimestre, només has de dir-li \"exporta l'excel\" i LaSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.",
+                "excel-badge": "Més ràpid impossible"
             },
             es: {
                 "hero-title": 'Tira tus tickets y facturas a la papelera <span class="text-gray-400 font-light">(después de hacerles una foto).</span>',
@@ -175,7 +216,10 @@
                 "price-footer": '\"Te vas cuando quieras, pero no lo harás.\"',
                 "price-cta": "Quiero empezar ahora",
                 "copyright": "&copy; 2026 LaSecre. Todos los derechos reservados.",
-                "wa-msg": "Hola LaSecre, quiero mi primer mes gratis."
+                "wa-msg": "Hola LaSecre, quiero mi primer mes gratis.",
+                "excel-title": "El Excel para tu gestor, solo pidiéndolo",
+                "excel-text": "Cuando acabe el trimestre, solo dile \"exporta el excel\" y LaSecre preparará un documento perfecto con todos los tickets ordenados, listo para enviar. Menos dolores de cabeza, más tiempo para ti.",
+                "excel-badge": "Más rápido imposible"
             }
         };
 

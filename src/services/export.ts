@@ -1,7 +1,7 @@
 import { Workbook } from 'exceljs';
 import path from 'path';
 import fs from 'fs';
-import { startOfQuarter, endOfQuarter } from 'date-fns';
+import { startOfQuarter, endOfQuarter, format } from 'date-fns';
 import * as airtableService from './airtable';
 
 export const generateQuarterlyExcel = async (userPhone: string, year: number, quarter: number) => {
@@ -63,7 +63,8 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
 
   // 5. Guardar fitxer temporal
   const tmpDir = path.join(process.cwd(), 'tmp');
-  const fileName = `resum_lasecre_Q${quarter}_${year}.xlsx`;
+  const today = format(new Date(), 'yyyyMMdd');
+  const fileName = `lasecre_${userPhone}_T${quarter}-${year}_${today}.xlsx`;
   const filePath = path.join(tmpDir, fileName);
   
   if (!fs.existsSync(tmpDir)) {
