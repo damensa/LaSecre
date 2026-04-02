@@ -75,6 +75,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
       // Log the incoming message for debugging
       console.log(`[Webhook] Processing message ${messageId} from ${senderPhone}`);
 
+      // Extract text body if available for late use (language detection, etc.)
+      const incomingText = message.text?.body || '';
+
       // 4. Handle User Logic
       let user = await userService.getUser(senderPhone);
       if (!user) {
@@ -82,7 +85,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
         
         // Language detection based on the first message
         // Prioritize Catalan specific words to avoid false positives with "el"
-        const isCatalan = /\b(vull|meu|tiquet|amb|per|els)\b/i.test(text);
+        const isCatalan = /\b(vull|meu|tiquet|amb|per|els)\b/i.test(incomingText);
         const isSpanish = !isCatalan;
         
         // 1. Send welcome logo
@@ -128,6 +131,29 @@ whatsappRouter.post('/webhook', async (req, res) => {
           );
         }
         return;
+      }
+
+      // 4.5. Check Trial Expiration for existing FREE users
+      // This applies to both TEXT and IMAGE messages
+      if (user.status === 'FREE') {
+        const trialDays = 30;
+        const createdAt = new Date(user.createdAt);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays > trialDays) {
+          // Determine language context for the expiration message
+          const isSpanish = /[¿¡]|\b(quiero|mi|papeleo|pasa|por)\b/i.test(incomingText);
+          
+          const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
+          const limitMsg = isSpanish 
+            ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
+            : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
+          
+          await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
+          return;
+        }
       }
 
       // 5. Handle Text
@@ -227,22 +253,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText);
         const langHint = isSpanish ? "Castellano" : "Català";
 
-        if (currentUser.status === 'FREE') {
-          const trialDays = 30;
-          const createdAt = new Date(currentUser.createdAt);
-          const now = new Date();
-          const diffTime = Math.abs(now.getTime() - createdAt.getTime());
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        // Trial check now handled globally above
 
-          if (diffDays > trialDays) {
-            const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
-            const limitMsg = isSpanish 
-              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
-              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
-            await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
-            return;
-          }
-        }
 
         const mediaId = message.image.id;
         const waitMsg = isSpanish ? "Lo estoy mirando... un momento." : "Ho estic mirant... un moment.";
