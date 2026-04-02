@@ -80,21 +80,51 @@ whatsappRouter.post('/webhook', async (req, res) => {
       if (!user) {
         user = await userService.registerUser(senderPhone);
         
-        // Send welcome logo (realistic photography)
+        // Language detection based on the first message
+        const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(text);
+        
+        // 1. Send welcome logo
         try {
-          const logoPath = path.join(process.cwd(), 'logo_nou_small.png');
+          // Use the correct logo path in public/
+          const logoPath = path.join(process.cwd(), 'public', 'logo_LaSecre.PNG');
           if (fs.existsSync(logoPath)) {
             const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
             await whatsappService.sendWhatsAppImage(senderPhone, mediaId);
+          } else {
+            console.warn('[Onboarding] Logo file not found at:', logoPath);
           }
         } catch (logoError) {
-          console.error('Error sending welcome logo:', logoError);
+          console.error('[Onboarding] Error sending welcome logo:', logoError);
         }
 
-        await whatsappService.sendWhatsAppMessage(
-          senderPhone, 
-          "Ei, jefe! Soc LaSecre. Ja t'he registrat i estic a punt per rebre els teus tiquets. Tens **30 dies de prova de franc** per enviar-me tot el que vulguis. Al sac!\n\nPD: Si vols que enviï el resum al teu gestor (que ja ens coneixem...), digues-me: 'gestor elseu@email.com'"
-        );
+        // 2. Welcome Message Sequence
+        if (isSpanish) {
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "¡Hola jefe! 👔 Soy LaSecre. Ya te he activado tu **mes de prueba gratis**. Mi misión es que no vuelvas a picar ni un ticket a mano."
+          );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Cómo funciono: Cada vez que tengas un ticket o factura, **hazle una foto y mándamela por aquí mismo**. Yo leo el importe, el IVA y lo guardo todo por ti."
+          );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'"
+          );
+        } else {
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Ei, jefe! 👔 Soc LaSecre. Ja t'he activat el teu **mes de prova de franc**. La meva missió és que no tornis a picar ni un tiquet a mà."
+          );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Com funciona: Cada vegada que tinguis un tiquet o factura, **fes-li una foto i envia-me-la per aquí**. Jo llegiré l'import, l'IVA i ho guardaré tot per tu."
+          );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone, 
+            "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'"
+          );
+        }
         return;
       }
 
