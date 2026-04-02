@@ -1,0 +1,9 @@
+import prisma from '../src/utils/prisma';
+
+async function listUsers() {
+  const users = await prisma.user.findMany();
+  console.log('Current users in DB:', JSON.stringify(users, null, 2));
+  process.exit();
+}
+
+listUsers();
