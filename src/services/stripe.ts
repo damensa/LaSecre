@@ -17,6 +17,10 @@ export const createCheckoutSession = async (phone: string) => {
     success_url: `${process.env.BASE_URL}/success`,
     cancel_url: `${process.env.BASE_URL}/cancel`,
     client_reference_id: phone,
+    tax_id_collection: {
+      enabled: true,
+    },
+    billing_address_collection: 'required',
   });
 
   return session.url;

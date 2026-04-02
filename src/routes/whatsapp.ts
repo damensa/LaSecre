@@ -228,11 +228,17 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const langHint = isSpanish ? "Castellano" : "Català";
 
         if (currentUser.status === 'FREE') {
-          if (currentUser.monthlyCount >= 15) {
+          const trialDays = 30;
+          const createdAt = new Date(currentUser.createdAt);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - createdAt.getTime());
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays > trialDays) {
             const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
             const limitMsg = isSpanish 
-              ? `Epa jefe, ya has llegado al límite de 15 tickets de prueba. ¿Te ha gustado ahorrar tiempo? Para seguir con LaSecre y no volver a hacer Excels a mano, suscríbete por solo **5 €/mes** aquí: ${checkoutUrl}`
-              : `Ei jefe, ja has arribat al límit de 15 tiquets de prova. T'ha agradat estalviar temps? Per seguir amb LaSecre i no tornar a fer Excels a mà, subscriu-te per només **5 €/mes** aquí: ${checkoutUrl}`;
+              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
+              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
             await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
             return;
           }
