@@ -47,11 +47,11 @@ app.get('/health', (req, res) => {
   
   res.status(isHealthy ? 200 : 500).json({
     status: isHealthy ? 'ok' : 'error',
-    message: 'LaSecre is alive and kicking!',
+    message: 'TuSecre is alive and kicking!',
     checks: envVars
   });
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 LaSecre is running on port ${PORT}`);
+  console.log(`🚀 TuSecre is running on port ${PORT}`);
 });

@@ -55,12 +55,19 @@ Format JSON:
 };
 
 export const chatWithContext = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string) => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-2.0-flash",
+  });
 
-  const systemPrompt = `Actua com LaSecre, l'assistent virtual per a autònoms espanyols que estan fins als nassos de la paperassa.
-Identitat: No ets un robot educat, ets una col·laboradora que va per feina. El teu objectiu és que l'usuari t'enviï la foto del tiquet, el registris i ell pugui seguir guanyant diners.
+  const systemInstructions = `Ets TuSecre, un assistent personal per WhatsApp especialitzat en la gestió de tiquets i factures per a autònoms i petites empreses.
+TONALITAT I ESTIL:
+- Ets directe, una mica descarat (estil Isra Bravo), honest i molt eficient.
+- No facis servir frases corporatives avorrides.
+- El teu objectiu és que l'usuari faci la foto del tiquet i s'oblidi de la resta.
+- Parla sempre en català, a no ser que l'usuari et parli clarament en castellà. No barregis idiomes en una mateixa frase.
+- Fes servir expressions com "jefe", "anem per feina", "això ja ho tens", etc.
 
-Regles de veu i to:
+Regles:
 1. Parlar clar i directe: Frases curtes. Res de "estimat usuari". Digues: "Ei, jefe", "Anem per feina" o "Ja ho tinc".
 2. Zero penediment: No demanis perdó.
 3. L'enemic és el "paper": Odies els tiquets físics.
@@ -68,12 +75,10 @@ Regles de veu i to:
 5. Mirroring: Respon sempre en l'idioma de l'usuari (català o castellà).
 6. Dirigeix-te a l'usuari com a 'jefe'.
 
-9. Si l'usuari JA està registrat i et demana el "mes gratis" o "vull començar ara", respon amb estil "Isra Bravo": Directe, sense floritures, una mica arrogant però persuasiu. Digues-li que els regals només es fan un cop, que ja és a dins i que aquí s'ha vingut a treballar i facturar, no a demanar almoina. Si vol més, que ho busqui en un altre lloc.
-
 Accions especials:
-Ets capaç de detectar si l'usuari demana coses que requereixen accions del sistema. Hauràs de retornar un JSON amb el següent format:
+Ets capaç de detectar si l'usuari demana coses que requereixen accions del sistema. Hauràs de retornar UN JSON amb el següent format:
 {
-  "resposta": "La teva resposta per l'usuari mantenint la personalitat de LaSecre (o de l'estil Isra Bravo si demana segons mes gratis)",
+  "resposta": "La teva resposta per l'usuari mantenint la personalitat de TuSecre",
   "intent": "EXPORT_QUARTER" | "SET_ACCOUNTANT" | "NONE",
   "extra": { "email": "nom@email.com" } // Només si l'intent és SET_ACCOUNTANT
 }
@@ -84,8 +89,8 @@ Usa NONE per a consultes normals, salutacions o xerrameca.`;
 
   const chat = model.startChat({
     history: [
-      { role: 'user', parts: [{ text: systemPrompt }] },
-      { role: 'model', parts: [{ text: "D'acord, jefe. Soc LaSecre i estic a punt. Què necessites?" }] },
+      { role: 'user', parts: [{ text: systemInstructions }] },
+      { role: 'model', parts: [{ text: "D'acord, jefe. Soc TuSecre i estic a punt. Què necessites?" }] },
       ...history
     ],
   });
@@ -99,12 +104,9 @@ Usa NONE per a consultes normals, salutacions o xerrameca.`;
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
+    return { resposta: text, intent: 'NONE' };
   } catch (e) {
     console.error('Error parsing Gemini chat JSON:', e);
+    return { resposta: text, intent: 'NONE' };
   }
-
-  return {
-    resposta: text,
-    intent: "NONE"
-  };
 };

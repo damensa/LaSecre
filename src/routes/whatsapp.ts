@@ -151,8 +151,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
             const shortUrl = `${process.env.BASE_URL || 'https://la-secre-hazel.vercel.app'}/p/${senderPhone}`;
             
             const limitMsg = isSpanish 
-              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${shortUrl}`
-              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${shortUrl}`;
+              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que TuSecre se encargue de tu papeleo, pasa por caja aquí: ${shortUrl}`
+              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que TuSecre s'encarregui de la teva paperassa, passa per caixa aquí: ${shortUrl}`;
             
             await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
             return;

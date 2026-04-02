@@ -1,0 +1,14 @@
+node_modules
+dist
+.env
+*.db
+*.db-journal
+.git
+.antigravity
+tests
+scripts
+docs
+README.md
+Dockerfile
+docker-compose.yml
+.dockerignore

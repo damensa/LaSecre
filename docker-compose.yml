@@ -1,22 +1,32 @@
-version: '3.8'
-
 services:
-  lasecre-bot:
+  app:
     build: .
-    container_name: lasecre_bot
+    restart: always
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    networks:
+      - tusecre_net
+
+  caddy:
+    image: caddy:latest
     restart: always
     ports:
-      - "3001:3000"
+      - "80:80"
+      - "443:443"
     volumes:
-      - ./prisma:/app/prisma
-    env_file:
-      - .env
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - tusecre_net
     depends_on:
-      - redis
+      - app
 
-  redis:
-    image: redis:7-alpine
-    container_name: lasecre_redis
-    restart: always
-    volumes:
-      - ./redis-data:/data
+networks:
+  tusecre_net:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

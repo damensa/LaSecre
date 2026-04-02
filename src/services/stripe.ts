@@ -13,6 +13,11 @@ export const createCheckoutSession = async (phone: string) => {
         quantity: 1,
       },
     ],
+    custom_text: {
+      submit: {
+        message: 'Gràcies per confiar en TuSecre. Ara ja pots oblidar-te del paperam.'
+      }
+    },
     mode: 'subscription',
     success_url: `${process.env.BASE_URL || 'https://lasecre.vercel.app'}/success`,
     cancel_url: `${process.env.BASE_URL || 'https://lasecre.vercel.app'}/cancel`,

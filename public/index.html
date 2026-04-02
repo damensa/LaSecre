@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LaSecre - El teu assistent de tiquets i factures per WhatsApp</title>
+    <title>TuSecre - El teu assistent de tiquets i factures per WhatsApp</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/png" href="logo_LaSecre.PNG">
+    <link rel="icon" type="image/png" href="logo_TuSecre.PNG">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -34,7 +34,7 @@
 
     <!-- Header / Logo & Lang Switcher -->
     <header class="py-6 px-6 max-w-6xl mx-auto flex justify-between items-center">
-        <img src="logo_LaSecre.PNG" alt="LaSecre Logo" class="w-32 md:w-48 h-auto object-contain">
+        <img src="logo_TuSecre.PNG" alt="TuSecre Logo" class="w-32 md:w-48 h-auto object-contain">
         <div class="flex space-x-4 text-sm font-medium">
             <button onclick="setLanguage('ca')" id="btn-ca" class="lang-btn active">CA</button>
             <span class="text-gray-300">|</span>
@@ -49,11 +49,11 @@
         </h1>
         <p id="hero-subtitle" class="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed"
             data-i18n="hero-subtitle">
-            LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per
+            TuSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per
             al gestor. Sense apps. Sense Excels. Només WhatsApp.
         </p>
         <a id="hero-cta"
-            href="https://wa.me/15551542879?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+            href="https://wa.me/15551542879?text=Hola%20TuSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
             class="inline-block brand-orange text-white font-bold text-xl px-10 py-5 rounded-full shadow-lg brand-orange-hover transition-all transform hover:scale-105 active:scale-95 mb-8"
             data-i18n="hero-cta">
             Prova-ho ara mateix
@@ -98,7 +98,7 @@
             <div class="text-center p-6 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
                 <div class="text-4xl mb-4">🧠</div>
                 <h3 id="step2-title" class="text-xl font-bold mb-3" data-i18n="step2-title">Jo m'encarrego</h3>
-                <p id="step2-text" class="text-gray-600" data-i18n="step2-text">LaSecre llegeix l'import, la data i el
+                <p id="step2-text" class="text-gray-600" data-i18n="step2-text">TuSecre llegeix l'import, la data i el
                     comerç al moment gràcies a la intel·ligència artificial.</p>
             </div>
             <div class="text-center p-6 border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
@@ -118,7 +118,7 @@
                     L'Excel pel teu gestor, només demanant-ho
                 </h2>
                 <p id="excel-text" class="text-lg md:text-xl text-gray-700 leading-relaxed mb-8" data-i18n="excel-text">
-                    Quan s'acabi el trimestre, només has de dir-li "exporta l'excel" i LaSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.
+                    Quan s'acabi el trimestre, només has de dir-li "exporta l'excel" i TuSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.
                 </p>
                 <div class="inline-flex items-center gap-2 bg-orange-50 px-5 py-3 rounded-full text-sm font-semibold shadow-sm text-orange-900 border border-orange-200">
                     <span class="text-xl">✨</span> <span data-i18n="excel-badge">Més ràpid impossible</span>
@@ -147,7 +147,7 @@
             <p id="price-footer" class="text-gray-400 mb-8 italic" data-i18n="price-footer">"Te'n vas quan vulguis, però
                 no ho faràs."</p>
             <a id="price-cta"
-                href="https://wa.me/15551542879?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+                href="https://wa.me/15551542879?text=Hola%20TuSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
                 class="inline-block brand-orange text-white font-bold text-lg px-8 py-4 rounded-full brand-orange-hover transition-all"
                 data-i18n="price-cta">
                 Vull començar ara
@@ -157,13 +157,13 @@
 
     <!-- Footer -->
     <footer class="py-10 px-6 text-center text-gray-400 text-sm">
-        <p id="copyright" data-i18n="copyright">&copy; 2026 LaSecre. Tots els drets reservats.</p>
+        <p id="copyright" data-i18n="copyright">&copy; 2026 TuSecre. Tots els drets reservats.</p>
     </footer>
 
     <!-- Sticky Mobile CTA -->
     <div class="fixed bottom-6 right-6 md:hidden">
         <a id="mobile-cta"
-            href="https://wa.me/15551542879?text=Hola%20LaSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
+            href="https://wa.me/15551542879?text=Hola%20TuSecre,%20vull%20el%20meu%20primer%20mes%20gratis."
             class="brand-orange text-white p-4 rounded-full shadow-2xl flex items-center justify-center animate-bounce">
             <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -176,7 +176,7 @@
         const translations = {
             ca: {
                 "hero-title": "Fes la foto, guarda el paper i <span class='brand-orange-text'>oblida't del gestor</span>.",
-                "hero-subtitle": "LaSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per al gestor. Sense apps. Sense Excels. Només WhatsApp.",
+                "hero-subtitle": "TuSecre és l'assistent per WhatsApp que llegeix els teus tiquets i factures, t'ordena l'IVA i et prepara el resum per al gestor. Sense apps. Sense Excels. Només WhatsApp.",
                 "hero-cta": "Prova-ho ara mateix",
                 "pain-title": "Encara guardes tiquets i factures arrugats a la guantera del cotxe?",
                 "pain-text": '\"Passes els diumenges a la tarda picant factures davant d\'un Excel? Estàs perdent temps i diners.\"',
@@ -184,22 +184,22 @@
                 "step1-title": "Fes la foto",
                 "step1-text": "Com si fos un missatge a la família. Ràpid i sense complicacions.",
                 "step2-title": "Jo m'encarrego",
-                "step2-text": "LaSecre llegeix l'import, la data i el comerç del tiquet o factura al moment gràcies a la intel·ligència artificial.",
+                "step2-text": "TuSecre llegeix l'import, la data i el comerç del tiquet o factura al moment gràcies a la intel·ligència artificial.",
                 "step3-title": "I el teu gestor?",
                 "step3-text": "Et voldrà fer un monument. Rep l'Excel polit i totes les fotos digitalitzades. Sense taques de cafè ni papers perduts.",
                 "price-title": "Transparent i honest",
                 "price-promo": 'El teu primer mes és de regal. Després, <span class="text-[#FF8C00] font-bold">5€ al mes</span>. Sense permanència.',
                 "price-footer": '\"Te\'n vas quan vulguis, però no ho faràs.\"',
                 "price-cta": "Vull començar ara",
-                "copyright": "&copy; 2026 LaSecre. Tots els drets reservats.",
-                "wa-msg": "Hola LaSecre, vull el meu primer mes gratis.",
+                "copyright": "&copy; 2026 TuSecre. Tots els drets reservats.",
+                "wa-msg": "Hola TuSecre, vull el meu primer mes gratis.",
                 "excel-title": "L'Excel pel teu gestor, només demanant-ho",
-                "excel-text": "Quan s'acabi el trimestre, només has de dir-li \"exporta l'excel\" i LaSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.",
+                "excel-text": "Quan s'acabi el trimestre, només has de dir-li \"exporta l'excel\" i TuSecre prepararà un document perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.",
                 "excel-badge": "Més ràpid impossible"
             },
             es: {
                 "hero-title": "Haz la foto, guarda el papel y <span class='brand-orange-text'>olvídate del gestor</span>.",
-                "hero-subtitle": "LaSecre es el asistente por WhatsApp que lee tus tickets y facturas, te ordena el IVA y te prepara el resumen para el gestor. Sin apps. Sin Excels. Solo WhatsApp.",
+                "hero-subtitle": "TuSecre es el asistente por WhatsApp que lee tus tickets y facturas, te ordena el IVA y te prepara el resumen para el gestor. Sin apps. Sin Excels. Solo WhatsApp.",
                 "hero-cta": "Pruébalo ahora mismo",
                 "pain-title": "¿Aún guardas tickets y facturas arrugados en la guantera del coche?",
                 "pain-text": '\"¿Pasas los domingos por la tarde picando facturas frente a un Excel? Estás perdiendo tiempo y dinero.\"',
@@ -207,17 +207,17 @@
                 "step1-title": "Haz la foto",
                 "step1-text": "Como si fuera un mensaje a la familia. Rápido y sin complicaciones.",
                 "step2-title": "Yo me encargo",
-                "step2-text": "LaSecre lee el importe, la fecha y el comercio del ticket o factura al momento gracias a la inteligencia artificial.",
+                "step2-text": "TuSecre lee el importe, la fecha y el comercio del ticket o factura al momento gracias a la inteligencia artificial.",
                 "step3-title": "¿Y tu gestor?",
                 "step3-text": "Te querrá hacer un monumento. Recibe el Excel limpio y todas las fotos digitalitzadas. Sin manchas de café ni papeles perdidos.",
                 "price-title": "Transparente y honesto",
                 "price-promo": 'Tu primer mes es de regalo. Después, <span class="text-[#FF8C00] font-bold">5€ al mes</span>. Sin permanencia.',
                 "price-footer": '\"Te vas cuando quieras, pero no lo harás.\"',
                 "price-cta": "Quiero empezar ahora",
-                "copyright": "&copy; 2026 LaSecre. Todos los derechos reservados.",
-                "wa-msg": "Hola LaSecre, quiero mi primer mes gratis.",
+                "copyright": "&copy; 2026 TuSecre. Todos los derechos reservados.",
+                "wa-msg": "Hola TuSecre, quiero mi primer mes gratis.",
                 "excel-title": "El Excel para tu gestor, solo pidiéndolo",
-                "excel-text": "Cuando acabe el trimestre, solo dile \"exporta el excel\" y LaSecre preparará un documento perfecto con todos los tickets ordenados, listo para enviar. Menos dolores de cabeza, más tiempo para ti.",
+                "excel-text": "Cuando acabe el trimestre, solo dile \"exporta el excel\" y TuSecre preparará un documento perfecto con todos los tickets ordenados, listo para enviar. Menos dolores de cabeza, más tiempo para ti.",
                 "excel-badge": "Más rápido imposible"
             }
         };
@@ -249,9 +249,22 @@
             document.documentElement.lang = lang;
         }
 
-        // Carregar idioma guardat o per defecte
-        const savedLang = localStorage.getItem('lasecre_lang') || 'ca';
-        setLanguage(savedLang);
+        // Carregar idioma guardat o per defecte basat en domini
+        const hostname = window.location.hostname;
+        let defaultLang = localStorage.getItem('tusecre_lang'); // Canviat a tusecre_lang
+
+        if (!defaultLang) {
+            if (hostname.endsWith('.cat')) {
+                defaultLang = 'ca';
+            } else if (hostname.endsWith('.es')) {
+                defaultLang = 'es';
+            } else {
+                // Browser lang detection or default
+                const browserLang = navigator.language || '';
+                defaultLang = browserLang.startsWith('es') ? 'es' : 'ca';
+            }
+        }
+        setLanguage(defaultLang);
     </script>
 </body>
 

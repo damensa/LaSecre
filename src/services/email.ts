@@ -26,10 +26,10 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
 
   try {
     const info = await transporter.sendMail({
-      from: `"LaSecre" <${user}>`,
+      from: `"TuSecre" <${user}>`,
       to,
-      subject: `Resum Trimestral LaSecre - ${phone}`,
-      text: `Hola jefe! Aquí t'adjuntem el resum trimestral generat per LaSecre per al número ${phone}.`,
+      subject: `Resum Trimestral TuSecre - ${phone}`,
+      text: `Hola jefe! Aquí t'adjuntem el resum trimestral generat per TuSecre per al número ${phone}.`,
       attachments: [
         {
           filename: fileName,
