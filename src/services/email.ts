@@ -1,0 +1,47 @@
+import nodemailer from 'nodemailer';
+import path from 'path';
+
+export const sendExcelByEmail = async (to: string, filePath: string, phone: string) => {
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '465');
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) {
+    console.warn('[Email] Missing SMTP configuration. Email not sent.');
+    return false;
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465, // true for 465, false for other ports
+    auth: {
+      user,
+      pass,
+    },
+  });
+
+  const fileName = path.basename(filePath);
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"LaSecre" <${user}>`,
+      to,
+      subject: `Resum Trimestral LaSecre - ${phone}`,
+      text: `Hola jefe! Aquí t'adjuntem el resum trimestral generat per LaSecre per al número ${phone}.`,
+      attachments: [
+        {
+          filename: fileName,
+          path: filePath,
+        },
+      ],
+    });
+
+    console.log('[Email] Message sent: %s', info.messageId);
+    return true;
+  } catch (error: any) {
+    console.error('[Email] Error sending email:', error.message);
+    return false;
+  }
+};

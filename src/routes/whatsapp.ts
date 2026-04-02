@@ -6,6 +6,7 @@ import * as userService from '../services/user';
 import * as geminiService from '../services/gemini';
 import * as airtableService from '../services/airtable';
 import * as stripeService from '../services/stripe';
+import * as emailService from '../services/email';
 import prisma from '../utils/prisma';
 
 export const whatsappRouter = Router();
@@ -144,7 +145,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
         
         if (diffDays > trialDays) {
           try {
-            const isSpanish = /[¿¡]|\b(quiero|mi|papeleo|pasa|por)\b/i.test(incomingText);
+            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(incomingText);
+            const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo|pasa|por|papeleo)\b/i.test(incomingText));
+            
             const shortUrl = `${process.env.BASE_URL || 'https://la-secre-hazel.vercel.app'}/p/${senderPhone}`;
             
             const limitMsg = isSpanish 
@@ -197,9 +200,15 @@ whatsappRouter.post('/webhook', async (req, res) => {
         }
 
         if (result.intent === 'EXPORT_QUARTER') {
-          // Determine language context
+          // Determine language context: prioritize current message language
           const historyText = history.map((m: any) => m.content).join(' ');
-          const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText);
+          
+          // Check for Catalan markers like apostrophes or unique letters
+          const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
+          const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo)\b/i.test(text));
+          
+          // Final decision: if it doesn't look like Spanish but looks like Catalan, use Catalan. Default to previous history check if unsure.
+          const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText));
 
           // Send the explanatory message first (from Gemini)
           await whatsappService.sendWhatsAppMessage(senderPhone, result.resposta);
@@ -213,7 +222,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             const filePath = await require('../services/export').generateQuarterlyExcel(senderPhone, currentYear, currentQuarter);
             
             if (!filePath) {
-              const noReceiptsMsg = isSpanish 
+              const noReceiptsMsg = finalIsSpanish 
                 ? "Ostras, no he encontrado ningún ticket de este trimestre para exportar. ¡Envíame alguna foto primero!"
                 : "Ostres, no he trobat cap tiquet d'aquest trimestre per exportar. Envia'm alguna foto primer!";
               await whatsappService.sendWhatsAppMessage(senderPhone, noReceiptsMsg);
@@ -221,15 +230,21 @@ whatsappRouter.post('/webhook', async (req, res) => {
               const mediaId = await whatsappService.uploadMedia(filePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
               await whatsappService.sendWhatsAppDocument(senderPhone, mediaId, path.basename(filePath));
               
-              const exportMessage = (user as any).accountantEmail 
-                ? (isSpanish ? `¡Aquí lo tienes, jefe! Enviado también por correo a ${(user as any).accountantEmail}.` : `Aquí el tens, jefe! Enviat també per correu a ${(user as any).accountantEmail}.`)
-                : (isSpanish ? "¡Aquí lo tienes, jefe! Ya se lo puedes pasar a tu gestor." : "Aquí el tens, jefe! Ja li pots passar al teu gestor.");
+              // Email sending logic
+              let emailSent = false;
+              if ((user as any).accountantEmail) {
+                emailSent = await emailService.sendExcelByEmail((user as any).accountantEmail, filePath, senderPhone);
+              }
+
+              const exportMessage = emailSent 
+                ? (finalIsSpanish ? `¡Aquí lo tienes, jefe! Enviado también por correo a ${(user as any).accountantEmail}.` : `Aquí el tens, jefe! Enviat també per correu a ${(user as any).accountantEmail}.`)
+                : (finalIsSpanish ? "¡Aquí lo tienes, jefe! Ya se lo puedes pasar a tu gestor." : "Aquí el tens, jefe! Ja li pots passar al teu gestor.");
               
               await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
             }
           } catch (error) {
             console.error('Export error:', error);
-            const errorMsg = isSpanish 
+            const errorMsg = finalIsSpanish 
                ? "Me he liado intentando hacer el Excel. Vuélvemelo a pedir en un momento."
                : "M'he liat intentant fer l'Excel. Torna-m'ho a demanar d'aquí un moment.";
             await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);

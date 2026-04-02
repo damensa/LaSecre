@@ -27,6 +27,7 @@
     "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "form-data": "^4.0.5",
+    "nodemailer": "^8.0.4",
     "prisma": "^6.19.2",
     "stripe": "^20.4.1"
   },
@@ -35,6 +36,7 @@
     "@types/exceljs": "^0.5.3",
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
+    "@types/nodemailer": "^7.0.11",
     "@types/stripe": "^8.0.416",
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.14",
