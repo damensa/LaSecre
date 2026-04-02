@@ -143,16 +143,22 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
         if (diffDays > trialDays) {
-          // Determine language context for the expiration message
-          const isSpanish = /[¿¡]|\b(quiero|mi|papeleo|pasa|por)\b/i.test(incomingText);
-          
-          const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
-          const limitMsg = isSpanish 
-            ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
-            : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
-          
-          await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
-          return;
+          try {
+            // Determine language context for the expiration message
+            const isSpanish = /[¿¡]|\b(quiero|mi|papeleo|pasa|por)\b/i.test(incomingText);
+            
+            const checkoutUrl = await stripeService.createCheckoutSession(senderPhone);
+            const limitMsg = isSpanish 
+              ? `Ei jefe, se ha acabado el periquito. El mes de prueba ha volado. Si quieres seguir con el servicio y que me encargue de tu papeleo, pasa por caja aquí: ${checkoutUrl}`
+              : `Ei jefe, s'ha acabat el periquito. El mes de prova ha volat. Si vols seguir amb el servei i que m'encarregui de la teva paperassa, passa per caixa aquí: ${checkoutUrl}`;
+            
+            await whatsappService.sendWhatsAppMessage(senderPhone, limitMsg);
+            return;
+          } catch (stripeError: any) {
+            console.error('[Stripe] Error creating checkout session:', stripeError.message);
+            // If Stripe fails, we log it and let the user continue for now 
+            // to avoid blocking the whole bot, unless we decide otherwise.
+          }
         }
       }
 
