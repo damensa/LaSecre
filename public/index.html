@@ -223,7 +223,7 @@
         };
 
         function setLanguage(lang) {
-            localStorage.setItem('lasecre_lang', lang);
+            localStorage.setItem('tusecre_lang', lang);
 
             // Actualitzar textos
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -251,7 +251,7 @@
 
         // Carregar idioma guardat o per defecte basat en domini
         const hostname = window.location.hostname;
-        let defaultLang = localStorage.getItem('tusecre_lang'); // Canviat a tusecre_lang
+        let defaultLang = localStorage.getItem('tusecre_lang');
 
         if (!defaultLang) {
             if (hostname.endsWith('.cat')) {

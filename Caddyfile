@@ -1,7 +1,7 @@
 {
-    email info@tusecre.cat
+    email soy@tusecre.es
 }
 
-tusecre.cat, tusecre.es, tusecre.online {
+tusecre.cat, www.tusecre.cat, tusecre.es, www.tusecre.es, tusecre.online, www.tusecre.online {
     reverse_proxy app:3000
 }
