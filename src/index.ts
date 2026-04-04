@@ -20,6 +20,7 @@ app.use(express.static('public'));
 
 // Routes
 app.use('/whatsapp', whatsappRouter);
+app.use('/', whatsappRouter); // Allows /webhook directly
 app.use('/stripe', stripeRouter);
 
 // Short redirect to Stripe Checkout
