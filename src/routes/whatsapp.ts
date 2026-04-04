@@ -379,6 +379,21 @@ whatsappRouter.post('/webhook', async (req, res) => {
       const errorDetails = error.response?.data ? JSON.stringify(error.response.data) : error.message;
       console.error('Background processing error:', errorDetails);
       fs.appendFileSync('background_error.log', `[${new Date().toISOString()}] ${errorDetails}\n`);
+      
+      // Notify the user of a fallback error if we have their phone
+      try {
+        const body = JSON.parse(fs.readFileSync('webhook_body.json', 'utf8'));
+        const senderPhone = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
+        if (senderPhone) {
+            const isCatalan = !(/¿|¡|\b(el|la|mi|tu|su|un|una|pero|con|como)\b/i.test(body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body || ''));
+            const failMsg = isCatalan 
+                ? "Em sap greu jefe, m'he embolicat intentant processar el teu missatge. Torna-m'ho a dir d'aquí un moment."
+                : "Lo siento jefe, me he liado intentando procesar tu mensaje. Vuelve a decírmelo en un momento.";
+            await whatsappService.sendWhatsAppMessage(senderPhone, failMsg);
+        }
+      } catch (logError) {
+        console.error('Failed to send fallback error message:', logError);
+      }
     }
   })();
 });
