@@ -15,14 +15,15 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
   const transporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true for 465, false for other ports
+    secure: port === 465, // true for 465, false for 587/STARTTLS
     auth: {
       user,
       pass,
     },
     tls: {
-      rejectUnauthorized: false, // Essential for some VPS/Arsys configurations
-    }
+      rejectUnauthorized: false,
+    },
+    requireTLS: port === 587,
   });
 
   const fileName = path.basename(filePath);
