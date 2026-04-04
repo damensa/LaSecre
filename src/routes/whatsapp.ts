@@ -270,16 +270,20 @@ whatsappRouter.post('/webhook', async (req, res) => {
               const mediaId = await whatsappService.uploadMedia(filePath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
               await whatsappService.sendWhatsAppDocument(senderPhone, mediaId, path.basename(filePath));
               
+              // RE-FETCH the latest user info (to get the updated accountantEmail)
+              const updatedUser = await userService.getUser(senderPhone);
+              const managerEmail = updatedUser?.accountantEmail;
+
               // Email sending logic
               let emailSent = false;
-              if ((user as any).accountantEmail) {
-                emailSent = await emailService.sendExcelByEmail((user as any).accountantEmail, filePath, senderPhone);
+              if (managerEmail) {
+                emailSent = await emailService.sendExcelByEmail(managerEmail, filePath, senderPhone);
               }
 
               const exportMessage = emailSent 
                 ? (finalIsSpanish 
-                    ? `¡Listo jefe! Lo tienes aquí en PDF/Excel y también lo he enviado a tu gestor: ${(user as any).accountantEmail}. Ya puedes quitar el cava de la nevera.` 
-                    : `Fet jefe! Ja el tens aquí en PDF/Excel i també l'he enviat al teu gestor: ${(user as any).accountantEmail}. Ja pots treure el cava de la nevera.`)
+                    ? `¡Listo jefe! Lo tienes aquí en PDF/Excel y también lo he enviado a tu gestor: ${managerEmail}. Ya puedes quitar el cava de la nevera.` 
+                    : `Fet jefe! Ja el tens aquí en PDF/Excel i també l'he enviat al teu gestor: ${managerEmail}. Ja pots treure el cava de la nevera.`)
                 : (finalIsSpanish 
                     ? `¡Aquí lo tienes jefe! No he podido enviarlo por email porque no tengo la ficha de tu gestor. Si quieres que se lo pase yo, dime: "gestor: nombre@email.com"` 
                     : `Aquí el tens jefe! No l'he pogut enviar per mail perquè no tinc la fitxa del teu gestor. Si vols que li passi jo, digue'm: "gestor: nom@email.com"`);
