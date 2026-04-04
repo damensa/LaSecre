@@ -274,8 +274,12 @@ whatsappRouter.post('/webhook', async (req, res) => {
               }
 
               const exportMessage = emailSent 
-                ? (finalIsSpanish ? `¡Aquí lo tienes, jefe! Enviado también por correo a ${(user as any).accountantEmail}.` : `Aquí el tens, jefe! Enviat també per correu a ${(user as any).accountantEmail}.`)
-                : (finalIsSpanish ? "¡Aquí lo tienes, jefe! Ya se lo puedes pasar a tu gestor." : "Aquí el tens, jefe! Ja li pots passar al teu gestor.");
+                ? (finalIsSpanish 
+                    ? `¡Listo jefe! Lo tienes aquí en PDF/Excel y también lo he enviado a tu gestor: ${(user as any).accountantEmail}. Ya puedes quitar el cava de la nevera.` 
+                    : `Fet jefe! Ja el tens aquí en PDF/Excel i també l'he enviat al teu gestor: ${(user as any).accountantEmail}. Ja pots treure el cava de la nevera.`)
+                : (finalIsSpanish 
+                    ? `¡Aquí lo tienes jefe! No he podido enviarlo por email porque no tengo la ficha de tu gestor. Si quieres que se lo pase yo, dime: "gestor: nombre@email.com"` 
+                    : `Aquí el tens jefe! No l'he pogut enviar per mail perquè no tinc la fitxa del teu gestor. Si vols que li passi jo, digue'm: "gestor: nom@email.com"`);
               
               await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
             }

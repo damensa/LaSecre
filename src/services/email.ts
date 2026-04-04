@@ -20,6 +20,9 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
       user,
       pass,
     },
+    tls: {
+      rejectUnauthorized: false, // Essential for some VPS/Arsys configurations
+    }
   });
 
   const fileName = path.basename(filePath);
