@@ -41,7 +41,7 @@ app.get('/health', (req, res) => {
     whatsapp: !!process.env.WHATSAPP_TOKEN && !!process.env.WHATSAPP_PHONE_NUMBER_ID,
     gemini: !!process.env.GEMINI_API_KEY,
     stripe: !!process.env.STRIPE_API_KEY,
-    google: !!process.env.GOOGLE_SHEETS_CLIENT_EMAIL && !!process.env.GOOGLE_SHEETS_PRIVATE_KEY,
+    airtable: !!process.env.AIRTABLE_API_KEY && !!process.env.AIRTABLE_BASE_ID,
   };
   
   const isHealthy = Object.values(envVars).every(v => v);
