@@ -134,7 +134,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
         // 3. Process the intent in the first message too (e.g. "gestor ...")
         // Direct detection (Regex) to avoid 429 errors for simple commands
-        const managerRegex = /gestor\s+([^\s@]+@[^\s@]+\.[^\s@]+)/i;
+        // Improved Regex to allow 'gestor:', 'gestor :', 'gestor=', etc.
+        const managerRegex = /gestor[:\s=]*([^\s@]+@[^\s@]+\.[^\s@]+)/i;
         const match = incomingText.match(managerRegex);
         
         if (match) {
@@ -144,25 +145,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
                 ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` 
                 : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
             await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
-        } else {
-            // Fallback to Gemini if no direct match (only if needed)
-            try {
-                const firstMessageResult = await geminiService.chatWithContext([], incomingText);
-                if (firstMessageResult.intent === 'SET_ACCOUNTANT' && firstMessageResult.extra?.email) {
-                    const email = firstMessageResult.extra.email;
-                    await userService.updateAccountantEmail(senderPhone, email);
-                    const successMsg = isSpanish ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
-                    await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
-                }
-            } catch (e: any) {
-                console.warn('[Gemini] Failed to process first message intent:', e.message);
-            }
         }
         
-        // Save the first message to history
-        await (prisma as any).message.create({
-            data: { userPhone: senderPhone, role: 'user', content: incomingText }
-        });
+        // We SKIP Gemini fallback and history saving for new users to avoid 429 crashes 
+        // during the initial welcome sequence.
 
         return;
       }
@@ -212,7 +198,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
         }));
 
         // --- DIRECT COMMAND DETECTION (NO-IA) ---
-        const managerRegex = /gestor\s+([^\s@]+@[^\s@]+\.[^\s@]+)/i;
+        // Improved Regex to allow 'gestor:', 'gestor :', 'gestor=', etc.
+        const managerRegex = /gestor[:\s=]*([^\s@]+@[^\s@]+\.[^\s@]+)/i;
         const match = text.match(managerRegex);
 
         let result: any = { resposta: '', intent: 'NONE' };
