@@ -133,14 +133,29 @@ whatsappRouter.post('/webhook', async (req, res) => {
         }
 
         // 3. Process the intent in the first message too (e.g. "gestor ...")
-        const firstMessageResult = await geminiService.chatWithContext([], incomingText);
-        if (firstMessageResult.intent === 'SET_ACCOUNTANT' && firstMessageResult.extra?.email) {
-            const email = firstMessageResult.extra.email;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (emailRegex.test(email)) {
-              await userService.updateAccountantEmail(senderPhone, email);
-              const successMsg = isSpanish ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
-              await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
+        // Direct detection (Regex) to avoid 429 errors for simple commands
+        const managerRegex = /gestor\s+([^\s@]+@[^\s@]+\.[^\s@]+)/i;
+        const match = incomingText.match(managerRegex);
+        
+        if (match) {
+            const email = match[1];
+            await userService.updateAccountantEmail(senderPhone, email);
+            const successMsg = isSpanish 
+                ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` 
+                : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
+            await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
+        } else {
+            // Fallback to Gemini if no direct match (only if needed)
+            try {
+                const firstMessageResult = await geminiService.chatWithContext([], incomingText);
+                if (firstMessageResult.intent === 'SET_ACCOUNTANT' && firstMessageResult.extra?.email) {
+                    const email = firstMessageResult.extra.email;
+                    await userService.updateAccountantEmail(senderPhone, email);
+                    const successMsg = isSpanish ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
+                    await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
+                }
+            } catch (e: any) {
+                console.warn('[Gemini] Failed to process first message intent:', e.message);
             }
         }
         
@@ -196,7 +211,24 @@ whatsappRouter.post('/webhook', async (req, res) => {
           parts: [{ text: m.content }]
         }));
 
-        const result = await geminiService.chatWithContext(formattedHistory, text);
+        // --- DIRECT COMMAND DETECTION (NO-IA) ---
+        const managerRegex = /gestor\s+([^\s@]+@[^\s@]+\.[^\s@]+)/i;
+        const match = text.match(managerRegex);
+
+        let result: any = { resposta: '', intent: 'NONE' };
+
+        if (match) {
+            const email = match[1];
+            await userService.updateAccountantEmail(senderPhone, email);
+            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
+            result.resposta = isCatalan 
+                ? `Fet jefe! He guardat ${email} a la teva fitxa. A partir d'ara, quan demanis el resum l'enviaré directament aquí.`
+                : `¡Hecho jefe! He guardado ${email} en tu ficha. A partir de ahora, cuando pidas el resumen lo enviaré directamente aquí.`;
+            result.intent = 'SET_ACCOUNTANT';
+        } else {
+            // Only call Gemini if it's not a direct command
+            result = await geminiService.chatWithContext(formattedHistory, text);
+        }
 
         // Save user message
         await (prisma as any).message.create({

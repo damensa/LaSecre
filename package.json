@@ -12,7 +12,6 @@
     "test:gemini": "ts-node tests/test-gemini-parser.ts",
     "test:stripe": "cross-env NODE_ENV=test ts-node tests/test-stripe-mock.ts",
     "test:business-limit": "ts-node tests/test-business-limit.ts",
-    "test:models": "node dist/debug-gemini.js",
     "test": "npm run test:live && npm run test:gemini && npm run test:business-limit"
   },
   "keywords": [],

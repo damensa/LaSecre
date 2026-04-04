@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
 
 export const analyzeReceipt = async (base64Image: string, languageHint: string = "dedueix-ho o català") => {
-  const modelName = 'gemini-1.5-flash';
+  const modelName = 'gemini-2.0-flash';
   console.log(`[Gemini] Initializing model: ${modelName} for Receipt Analysis`);
   const model = genAI.getGenerativeModel({ model: modelName });
 
@@ -57,7 +57,7 @@ Format JSON:
 };
 
 export const chatWithContext = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string) => {
-  const modelName = 'gemini-1.5-flash';
+  const modelName = 'gemini-2.0-flash';
   console.log(`[Gemini] Initializing model: ${modelName} for Chat`);
   const model = genAI.getGenerativeModel({
     model: modelName,
