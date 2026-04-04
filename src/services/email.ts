@@ -22,8 +22,11 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
     },
     tls: {
       rejectUnauthorized: false,
+      minVersion: 'TLSv1.2',
     },
-    requireTLS: port === 587,
+    requireTLS: false, // Arsys might be picky if forced too early
+    debug: true,       // Force more logs to stdout
+    logger: true,      // Force more logs to node console
   });
 
   const fileName = path.basename(filePath);
