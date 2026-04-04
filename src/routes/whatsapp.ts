@@ -131,6 +131,24 @@ whatsappRouter.post('/webhook', async (req, res) => {
             "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'"
           );
         }
+
+        // 3. Process the intent in the first message too (e.g. "gestor ...")
+        const firstMessageResult = await geminiService.chatWithContext([], incomingText);
+        if (firstMessageResult.intent === 'SET_ACCOUNTANT' && firstMessageResult.extra?.email) {
+            const email = firstMessageResult.extra.email;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (emailRegex.test(email)) {
+              await userService.updateAccountantEmail(senderPhone, email);
+              const successMsg = isSpanish ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
+              await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
+            }
+        }
+        
+        // Save the first message to history
+        await (prisma as any).message.create({
+            data: { userPhone: senderPhone, role: 'user', content: incomingText }
+        });
+
         return;
       }
 
