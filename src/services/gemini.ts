@@ -3,9 +3,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
 
 export const analyzeReceipt = async (base64Image: string, languageHint: string = "dedueix-ho o català") => {
-  const modelName = 'gemini-2.0-flash';
-  console.log(`[Gemini] Initializing model: ${modelName} for Receipt Analysis`);
-  const model = genAI.getGenerativeModel({ model: modelName });
+  const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`[Gemini] Attempting model: ${modelName} for Receipt Analysis`);
+      const model = genAI.getGenerativeModel({ model: modelName });
 
   const prompt = `Actua com LaSecre, l'assistent virtual per a autònoms espanyols que estan fins als nassos de la paperassa.
 Identitat: No ets un robot educat, ets una col·laboradora que va per feina. El teu objectiu és que l'usuari t'enviï la foto del tiquet, el registris i ell pugui seguir guanyant diners.
@@ -36,32 +40,42 @@ Format JSON:
   "resposta_lasecre": "Genera aquesta resposta exacta imitant l'idioma de l'usuari i canviant [import_total] i [comerç]. CATALÀ: 'Fet. Ja he caçat els [import_total]€ de [comerç]. Jo ja m'ho he apuntat tot perquè tu no hagis de pensar-hi més. El teu gestor ja té la feina mig feta. Ara, fes-me un favor: guarda el tiquet a la teva carpeta de seguretat. Ja saps que Hisenda no té amics, i millor que el paper agafi pols allà que no que et falti el dia que vinguin amb preguntes. Un marró menys, seguim.' CASTELLÀ: 'Hecho. Ya he cazado los [import_total]€ de [comerç]. Yo ya me lo he apuntado todo para que no tengas que pensar más. Tu gestor ya tiene el trabajo a medias. Ahora, hazme un favor: guarda el ticket en tu carpeta de seguridad. Ya sabes que Hacienda no tiene amigos, y es mejor que el papel coja polvo ahí a que te falte el día que vengan con preguntas. Un marrón menos, seguimos.'"
 }`;
 
-  const result = await model.generateContent([
-    prompt,
-    { 
-      inlineData: { 
-        data: base64Image, 
-        mimeType: 'image/jpeg' 
-      } 
-    }
-  ]);
+    const result = await model.generateContent([
+      prompt,
+      { 
+        inlineData: { 
+          data: base64Image, 
+          mimeType: 'image/jpeg' 
+        } 
+      }
+    ]);
 
-  const response = await result.response;
-  const text = response.text();
-  
-  // Clean up potential markdown formatting if Gemini includes it
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('Failed to parse JSON from Gemini response');
-  
-  return JSON.parse(jsonMatch[0]);
+    const response = await result.response;
+    const text = response.text();
+    
+    // Clean up potential markdown formatting if Gemini includes it
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error(`Failed to parse JSON from Gemini model ${modelName}`);
+    
+    return JSON.parse(jsonMatch[0]);
+    } catch (e: any) {
+      console.error(`[Gemini] Error with model ${modelName}:`, e.message);
+      lastError = e;
+      continue; // Try next model
+    }
+  }
+
+  throw lastError || new Error('All Gemini models failed');
 };
 
 export const chatWithContext = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string) => {
-  const modelName = 'gemini-2.0-flash';
-  console.log(`[Gemini] Initializing model: ${modelName} for Chat`);
-  const model = genAI.getGenerativeModel({
-    model: modelName,
-  });
+  const modelsToTry = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash'];
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`[Gemini] Attempting model: ${modelName} for Chat`);
+      const model = genAI.getGenerativeModel({ model: modelName });
 
   const systemInstructions = `Ets TuSecre, un assistent personal per WhatsApp especialitzat en la gestió de tiquets i factures per a autònoms i petites empreses.
 TONALITAT I ESTIL:
@@ -100,17 +114,25 @@ Usa NONE per a consultes normals, salutacions o xerrameca.`;
   });
 
   const result = await chat.sendMessage(newMessage);
-  const response = await result.response;
-  const text = response.text();
+    const response = await result.response;
+    const text = response.text();
 
-  try {
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      return { resposta: text, intent: 'NONE' };
+    } catch (e) {
+      console.error('Error parsing Gemini chat JSON:', e);
+      return { resposta: text, intent: 'NONE' };
     }
-    return { resposta: text, intent: 'NONE' };
-  } catch (e) {
-    console.error('Error parsing Gemini chat JSON:', e);
-    return { resposta: text, intent: 'NONE' };
+    } catch (e: any) {
+      console.error(`[Gemini] Chat error with model ${modelName}:`, e.message);
+      lastError = e;
+      continue;
+    }
   }
+
+  throw lastError || new Error('All Gemini chat models failed');
 };
