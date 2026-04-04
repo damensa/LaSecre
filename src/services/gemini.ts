@@ -1,9 +1,11 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
 
 export const analyzeReceipt = async (base64Image: string, languageHint: string = "dedueix-ho o català") => {
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const modelName = 'gemini-1.5-flash';
+  console.log(`[Gemini] Initializing model: ${modelName} for Receipt Analysis`);
+  const model = genAI.getGenerativeModel({ model: modelName });
 
   const prompt = `Actua com LaSecre, l'assistent virtual per a autònoms espanyols que estan fins als nassos de la paperassa.
 Identitat: No ets un robot educat, ets una col·laboradora que va per feina. El teu objectiu és que l'usuari t'enviï la foto del tiquet, el registris i ell pugui seguir guanyant diners.
@@ -55,8 +57,10 @@ Format JSON:
 };
 
 export const chatWithContext = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string) => {
+  const modelName = 'gemini-1.5-flash';
+  console.log(`[Gemini] Initializing model: ${modelName} for Chat`);
   const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: modelName,
   });
 
   const systemInstructions = `Ets TuSecre, un assistent personal per WhatsApp especialitzat en la gestió de tiquets i factures per a autònoms i petites empreses.
