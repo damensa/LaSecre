@@ -207,7 +207,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
         if (match) {
             const email = match[1];
             await userService.updateAccountantEmail(senderPhone, email);
-            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
+            const historyText = history.map((m: any) => m.content).join(' ');
+            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text) || 
+                             (/[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(historyText));
+
             result.resposta = isCatalan 
                 ? `Fet jefe! He guardat ${email} a la teva fitxa. A partir d'ara, quan demanis el resum l'enviaré directament aquí.`
                 : `¡Hecho jefe! He guardado ${email} en tu ficha. A partir de ahora, cuando pidas el resumen lo enviaré directamente aquí.`;
