@@ -377,11 +377,24 @@ whatsappRouter.post('/webhook', async (req, res) => {
             data: { status: 'PROCESSED' }
           });
 
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error processing receipt:', error);
-          const errorMsg = isSpanish 
+          
+          // Check for quota errors (429) to be transparent with the user
+          const isQuotaError = error.message?.includes('429') || 
+                               (error.response?.data?.error?.message?.includes('quota')) ||
+                               (JSON.stringify(error).includes('429'));
+
+          let errorMsg = isSpanish 
              ? "Oye jefe, esta foto está muy borrosa y no veo nada. Vuelve a intentarlo o Hacienda no te devolverá ni un céntimo de esto."
              : "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.";
+
+          if (isQuotaError) {
+            errorMsg = isSpanish
+              ? "¡Ostras jefe! Google me ha cortado el grifo (error de cuota). Espérate un minuto y vuelve a mandarme la foto, que ahora mismo estoy colapsada."
+              : "Ostres jefe! Google m'ha tallat l'aixeta (error de quota). Espera't un minut i torna'm a enviar la foto, que ara mateix estic col·lapsada.";
+          }
+
           await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);
           // Optionally update status to ERROR here
           try {
@@ -405,9 +418,19 @@ whatsappRouter.post('/webhook', async (req, res) => {
         const senderPhone = body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from;
         if (senderPhone) {
             const isCatalan = !(/¿|¡|\b(el|la|mi|tu|su|un|una|pero|con|como)\b/i.test(body.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.text?.body || ''));
-            const failMsg = isCatalan 
+            
+            const isQuotaError = errorDetails?.includes('429') || errorDetails?.includes('quota');
+            
+            let failMsg = isCatalan 
                 ? "Em sap greu jefe, m'he embolicat intentant processar el teu missatge. Torna-m'ho a dir d'aquí un moment."
                 : "Lo siento jefe, me he liado intentando procesar tu mensaje. Vuelve a decírmelo en un momento.";
+
+            if (isQuotaError) {
+              failMsg = isCatalan
+                ? "Ostres jefe! Google m'ha tallat l'aixeta (error de quota). Espera't un minut i torna-m'ho a demanar."
+                : "¡Ostras jefe! Google me ha cortado el grifo (error de cuota). Espérate un minuto y vuélvemelo a pedir.";
+            }
+
             await whatsappService.sendWhatsAppMessage(senderPhone, failMsg);
         }
       } catch (logError) {
