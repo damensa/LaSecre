@@ -24,7 +24,10 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
       rejectUnauthorized: false,
     },
     requireTLS: false,
-    name: 'tusecre.cat', // Mandatory for some SMTP relays
+    name: 'tusecre.cat',
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
     debug: true,
     logger: true,
   });
