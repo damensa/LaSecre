@@ -44,7 +44,7 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
     console.log('[Email] Message sent: %s', info.messageId);
     return true;
   } catch (error: any) {
-    console.error('[Email] Error sending email:', error.message);
+    console.error('[Email] FULL ERROR sending email:', error);
     return false;
   }
 };

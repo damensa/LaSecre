@@ -280,13 +280,22 @@ whatsappRouter.post('/webhook', async (req, res) => {
                 emailSent = await emailService.sendExcelByEmail(managerEmail, filePath, senderPhone);
               }
 
-              const exportMessage = emailSent 
-                ? (finalIsSpanish 
-                    ? `¡Listo jefe! Lo tienes aquí en PDF/Excel y también lo he enviado a tu gestor: ${managerEmail}. Ya puedes quitar el cava de la nevera.` 
-                    : `Fet jefe! Ja el tens aquí en PDF/Excel i també l'he enviat al teu gestor: ${managerEmail}. Ja pots treure el cava de la nevera.`)
-                : (finalIsSpanish 
+              let exportMessage = '';
+              if (emailSent) {
+                exportMessage = finalIsSpanish 
+                    ? `¡Listo jefe! Lo tienes aquí en WhatsApp y también lo he enviado a tu gestor: ${managerEmail}. Ya puedes quitar el cava de la nevera.` 
+                    : `Fet jefe! Ja el tens aquí pel WhatsApp i també l'he enviat al teu gestor: ${managerEmail}. Ja pots treure el cava de la nevera.`;
+              } else if (managerEmail) {
+                // Email was found but NOT sent (SMTP failure)
+                exportMessage = finalIsSpanish
+                    ? `¡Aquí lo tienes jefe! He intentado enviarlo a ${managerEmail} pero mi servidor de correo (Arsys) ha dado un error. Pásaselo tú mismo mientras lo arreglo.`
+                    : `Aquí el tens jefe! He intentat enviar-lo a ${managerEmail} però el meu servidor de correu (Arsys) ha donat un error. Passa-li tu mateix mentre ho arreglo.`;
+              } else {
+                // No email found
+                exportMessage = finalIsSpanish 
                     ? `¡Aquí lo tienes jefe! No he podido enviarlo por email porque no tengo la ficha de tu gestor. Si quieres que se lo pase yo, dime: "gestor: nombre@email.com"` 
-                    : `Aquí el tens jefe! No l'he pogut enviar per mail perquè no tinc la fitxa del teu gestor. Si vols que li passi jo, digue'm: "gestor: nom@email.com"`);
+                    : `Aquí el tens jefe! No l'he pogut enviar per mail perquè no tinc la fitxa del teu gestor. Si vols que li passi jo, digue'm: "gestor: nom@email.com"`;
+              }
               
               await whatsappService.sendWhatsAppMessage(senderPhone, exportMessage);
             }
