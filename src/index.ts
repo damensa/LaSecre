@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import path from 'path';
 dotenv.config();
 
 console.log('--- SERVER STARTUP ---');
@@ -18,9 +19,11 @@ app.use('/stripe/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.static('public'));
 
-// Routes
+app.get('/politica', (req, res) => {
+  res.sendFile(path.join(process.cwd(), 'public', 'politica.html'));
+});
 app.use('/whatsapp', whatsappRouter);
-app.use('/', whatsappRouter); // Allows /webhook directly
+app.use('/', whatsappRouter); // Allows /webhook (GET and POST) directly
 app.use('/stripe', stripeRouter);
 
 // Short redirect to Stripe Checkout

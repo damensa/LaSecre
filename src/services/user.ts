@@ -44,6 +44,30 @@ export const updateUserStatus = async (phone: string, status: 'FREE' | 'PAID') =
   });
 };
 
+export const updateFiscalData = async (phone: string, data: { 
+  fiscalName?: string, 
+  nif?: string, 
+  address?: string, 
+  postalCode?: string, 
+  city?: string 
+}) => {
+  return await prisma.user.update({
+    where: { phone },
+    data,
+  });
+};
+
+export const deleteUser = async (phone: string) => {
+  // First delete associated messages and receipts
+  await (prisma as any).message.deleteMany({ where: { userPhone: phone } });
+  await (prisma as any).receipt.deleteMany({ where: { userPhone: phone } });
+  
+  // Then delete the user
+  return await prisma.user.delete({
+    where: { phone },
+  });
+};
+
 export const getUserByStripeCustomerId = async (stripeCustomerId: string) => {
   return await prisma.user.findUnique({
     where: { stripeCustomerId },

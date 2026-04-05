@@ -115,7 +115,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           );
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
-            "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'"
+            "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'\n\nAl usar TuSecre, aceptas nuestra política de privacidad: https://tusecre.cat/politica"
           );
         } else {
           await whatsappService.sendWhatsAppMessage(
@@ -128,7 +128,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           );
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
-            "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'"
+            "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'\n\nEn utilitzar TuSecre, acceptes la nostra política de privacitat: https://tusecre.cat/politica"
           );
         }
 
@@ -239,17 +239,17 @@ whatsappRouter.post('/webhook', async (req, res) => {
           }
         }
 
-        if (result.intent === 'EXPORT_QUARTER') {
-          // Determine language context: prioritize current message language
-          const historyText = history.map((m: any) => m.content).join(' ');
-          
-          // Check for Catalan markers like apostrophes or unique letters
-          const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
-          const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo)\b/i.test(text));
-          
-          // Final decision: if it doesn't look like Spanish but looks like Catalan, use Catalan. Default to previous history check if unsure.
-          const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText));
+        // Determine language context: prioritize current message language
+        const historyText = history.map((m: any) => m.content).join(' ');
+        
+        // Check for Catalan markers like apostrophes or unique letters
+        const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
+        const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo)\b/i.test(text));
+        
+        // Final decision: if it doesn't look like Spanish but looks like Catalan, use Catalan. Default to previous history check if unsure.
+        const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText));
 
+        if (result.intent === 'EXPORT_QUARTER') {
           // Send the explanatory message first (from Gemini)
           await whatsappService.sendWhatsAppMessage(senderPhone, result.resposta);
           
@@ -307,6 +307,41 @@ whatsappRouter.post('/webhook', async (req, res) => {
             await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);
           }
           return;
+        }
+
+        if (result.intent === 'SET_FISCAL_DATA') {
+            const fd = (result.extra as any)?.fiscalData;
+            if (fd && fd.nif) {
+                await userService.updateFiscalData(senderPhone, {
+                    fiscalName: fd.name,
+                    nif: fd.nif,
+                    address: fd.address
+                });
+                const successMsg = finalIsSpanish
+                    ? `¡Perfecto jefe! He guardado tus datos: ${fd.name} (${fd.nif}). Ya lo tengo todo para tus facturas. ✨`
+                    : `Perfecte jefe! He guardat les teves dades: ${fd.name} (${fd.nif}). Ja ho tinc tot per a les teves factures. ✨`;
+                await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
+                return;
+            }
+            
+            const fiscalPrompt = finalIsSpanish
+                ? "¡Claro jefe! Pásame el **Nombre Fiscal**, el **NIF/CIF** y la **Dirección** (calle, CP y ciudad). Así cuando quieras la factura de los 5€ de TuSecre, ya lo tendré todo listo. 👔"
+                : "I tant jefe! Passa'm el **Nom Fiscal**, el **NIF/CIF** i l'**Adreça** (carrer, CP i ciutat). Així quan vulguis la factura dels 5€ de TuSecre, ja ho tindré tot llest. 👔";
+            await whatsappService.sendWhatsAppMessage(senderPhone, fiscalPrompt);
+            return;
+        }
+
+        if (result.intent === 'DELETE_DATA') {
+            try {
+                await userService.deleteUser(senderPhone);
+                const deleteSuccess = finalIsSpanish
+                    ? "Hecho jefe. He borrado todos tus datos, tickets y mensajes de mi sistema. Ha sido un placer. 👔👋"
+                    : "Fet jefe. He esborrat totes les teves dades, tiquets i missatges del meu sistema. Ha estat un plaer. 👔👋";
+                await whatsappService.sendWhatsAppMessage(senderPhone, deleteSuccess);
+            } catch (err) {
+                console.error('Delete error:', err);
+            }
+            return;
         }
 
         // Default response for simple chat or other intents handled by Gemini's text

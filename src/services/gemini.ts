@@ -97,12 +97,17 @@ Accions especials:
 Ets capaç de detectar si l'usuari demana coses que requereixen accions del sistema. Hauràs de retornar UN JSON amb el següent format:
 {
   "resposta": "La teva resposta per l'usuari mantenint la personalitat de TuSecre. IMPORTANT: Si demana el resum/excel, confirma que t'hi poses ara mateix i que l'enviaràs per aquí (WhatsApp). No diguis 'al teu correu' a no ser que l'usuari hagi indicat expressament que vol que l'enviïs allà.",
-  "intent": "EXPORT_QUARTER" | "SET_ACCOUNTANT" | "NONE",
-  "extra": { "email": "nom@email.com" } // Només si l'intent és SET_ACCOUNTANT
+  "intent": "EXPORT_QUARTER" | "SET_ACCOUNTANT" | "SET_FISCAL_DATA" | "DELETE_DATA" | "NONE",
+  "extra": { 
+     "email": "nom@email.com", // Només si l'intent és SET_ACCOUNTANT
+     "fiscalData": { "name": "Effiguard SA", "nif": "B12345678", "address": "Carrer Major 12, 08001 BCN" } // Només si l'intent és SET_FISCAL_DATA
+  }
 }
 
 Usa EXPORT_QUARTER quan l'usuari demani el resum, l'excel, les dades de facturació, el trimestre, etc.
 Usa SET_ACCOUNTANT quan l'usuari vulgui configurar o canviar l'email del seu gestor.
+Usa SET_FISCAL_DATA quan l'usuari demani posar les seves dades per a la factura, "dades fiscals", "vull factura", etc.
+Usa DELETE_DATA quan l'usuari vulgui esborrar totes les seves dades o donar-se de baixa. Explica'ls que és una acció irreversible.
 Usa NONE per a consultes normals, salutacions o xerrameca.`;
 
   const chat = model.startChat({

@@ -15,6 +15,11 @@ model User {
   createdAt     DateTime @default(now())
   accountantEmail String?
   stripeCustomerId String? @unique
+  fiscalName    String?
+  nif           String?
+  address       String?
+  postalCode    String?
+  city          String?
   updatedAt     DateTime @updatedAt
 }
 
