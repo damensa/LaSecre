@@ -11,29 +11,86 @@
     </style>
 </head>
 <body class="bg-[#FFFDF9] text-gray-800 p-8 max-w-3xl mx-auto">
-    <header class="mb-12">
-        <a href="/" class="text-orange-600 font-bold">← Tornar a inici</a>
-        <h1 class="text-4xl font-bold mt-4">Política de Privacitat</h1>
+    <header class="mb-12 flex justify-between items-center text-sm">
+        <a href="/" class="text-orange-600 font-bold" data-i18n="back-home">← Tornar a inici</a>
+        <div class="flex space-x-4 font-medium text-gray-400">
+            <button onclick="setLanguage('ca')" id="btn-ca" class="lang-btn">CA</button>
+            <span class="text-gray-200">|</span>
+            <button onclick="setLanguage('es')" id="btn-es" class="lang-btn">ES</button>
+        </div>
     </header>
 
+    <h1 class="text-4xl font-bold mb-8" data-i18n="title">Política de Privacitat</h1>
+
     <section class="space-y-6 text-lg leading-relaxed">
-        <p>A **TuSecre** (Effiguard Tech SL), la teva privacitat és la nostra prioritat. Aquesta política explica com tractem les teves dades.</p>
+        <p data-i18n="intro">A **TuSecre** (Effiguard Tech SL), la teva privacitat és la nostra prioritat. Aquesta política explica com tractem les teves dades.</p>
         
-        <h2 class="text-2xl font-bold">1. Quines dades recollim?</h2>
-        <p>Recollim el teu número de telèfon per identificar el teu compte de WhatsApp i les imatges dels tiquets o factures que ens envies per poder extreure'n la informació fiscal.</p>
+        <h2 class="text-2xl font-bold" data-i18n="h1-title">1. Quines dades recollim?</h2>
+        <p data-i18n="h1-text">Recollim el teu número de telèfon per identificar el teu compte de WhatsApp i les imatges dels tiquets o factures que ens envies per poder extreure'n la informació fiscal.</p>
 
-        <h2 class="text-2xl font-bold">2. Per a què les fem servir?</h2>
-        <p>Exclusivament per generar els teus resums trimestrals de despeses i IVA. No venem les teves dades a tercers.</p>
+        <h2 class="text-2xl font-bold" data-i18n="h2-title">2. Per a què les fem servir?</h2>
+        <p data-i18n="h2-text">Exclusivament per generar els teus resums trimestrals de despeses i IVA. No venem les teves dades a tercers.</p>
 
-        <h2 class="text-2xl font-bold">3. Eliminació de dades</h2>
-        <p>Pots demanar l'eliminació total de les teves dades i arxius en qualsevol moment escrivint al bot l'ordre: **"ESBORRA LES MEVES DADES"**.</p>
+        <h2 class="text-2xl font-bold" data-i18n="h3-title">3. Eliminació de dades</h2>
+        <p data-i18n="h3-text">Pots demanar l'eliminació total de les teves dades i arxius en qualsevol moment escrivint al bot l'ordre: **"ESBORRA LES MEVES DADES"**.</p>
 
-        <h2 class="text-2xl font-bold">4. Seguretat</h2>
-        <p>Tota la informació viatja xifrada via HTTPS i s'emmagatzema en servidors segurs.</p>
+        <h2 class="text-2xl font-bold" data-i18n="h4-title">4. Seguretat</h2>
+        <p data-i18n="h4-text">Tota la informació viatja xifrada via HTTPS i s'emmagatzema en servidors segurs.</p>
     </section>
 
-    <footer class="mt-20 text-gray-500 text-sm italic">
+    <footer class="mt-20 text-gray-500 text-sm italic" data-i18n="footer">
         Darrera actualització: Abril de 2026. TuSecre by Effiguard Tech SL.
     </footer>
+
+    <script>
+        const translations = {
+            ca: {
+                "back-home": "← Tornar a inici",
+                "title": "Política de Privacitat",
+                "intro": "A **TuSecre** (Effiguard Tech SL), la teva privacitat és la nostra prioritat. Aquesta política explica com tractem les teves dades.",
+                "h1-title": "1. Quines dades recollim?",
+                "h1-text": "Recollim el teu número de telèfon per identificar el teu compte de WhatsApp i les imatges dels tiquets o factures que ens envies per poder extreure'n la informació fiscal.",
+                "h2-title": "2. Per a què les fem servir?",
+                "h2-text": "Exclusivament per generar els teus resums trimestrals de despeses i IVA. No venem les teves dades a tercers.",
+                "h3-title": "3. Eliminació de dades",
+                "h3-text": 'Pots demanar l\'eliminació total de les teves dades i arxius en qualsevol moment escrivint al bot l\'ordre: **"ESBORRA LES MEVES DADES"**.',
+                "h4-title": "4. Seguretat",
+                "h4-text": "Tota la informació viatja xifrada via HTTPS i s'emmagatzema en servidors segurs.",
+                "footer": "Darrera actualització: Abril de 2026. TuSecre by Effiguard Tech SL."
+            },
+            es: {
+                "back-home": "← Volver a inicio",
+                "title": "Política de Privacidad",
+                "intro": "En **TuSecre** (Effiguard Tech SL), tu privacidad es nuestra prioridad. Esta política explica cómo tratamos tus datos.",
+                "h1-title": "1. ¿Qué datos recogemos?",
+                "h1-text": "Recogemos tu número de teléfono para identificar tu cuenta de WhatsApp y las imágenes de los tickets o facturas que nos envías para poder extraer la información fiscal.",
+                "h2-title": "2. ¿Para qué los usamos?",
+                "h2-text": "Exclusivamente para generar tus resúmenes trimestrales de gastos e IVA. No vendemos tus datos a terceros.",
+                "h3-title": "3. Eliminación de datos",
+                "h3-text": 'Puedes pedir la eliminación total de tus datos y archivos en cualquier momento escribiendo al bot la orden: **"ESBORRA LES MEVES DADES"**.',
+                "h4-title": "4. Seguridad",
+                "h4-text": "Toda la información viaja cifrada vía HTTPS y se almacena en servidores seguros.",
+                "footer": "Última actualización: Abril de 2026. TuSecre by Effiguard Tech SL."
+            }
+        };
+
+        function setLanguage(lang) {
+            localStorage.setItem('tusecre_lang', lang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang][key]) {
+                    el.innerHTML = translations[lang][key];
+                }
+            });
+            document.getElementById('btn-ca').style.color = lang === 'ca' ? '#FF8C00' : '';
+            document.getElementById('btn-es').style.color = lang === 'es' ? '#FF8C00' : '';
+            document.getElementById('btn-ca').style.fontWeight = lang === 'ca' ? 'bold' : '';
+            document.getElementById('btn-es').style.fontWeight = lang === 'es' ? 'bold' : '';
+            document.documentElement.lang = lang;
+        }
+
+        const savedLang = localStorage.getItem('tusecre_lang') || 'ca';
+        setLanguage(savedLang);
+    </script>
 </body>
 </html>
