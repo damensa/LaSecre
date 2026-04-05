@@ -81,6 +81,7 @@ export const getTicketsByQuarter = async (userPhone: string, startDate: Date, en
     });
 
     return (response.data as any).records.map((r: any) => ({
+      id: r.id,
       createdAt: new Date(r.fields['Data_Registre']),
       date: r.fields['Data_Tiquet'],
       merchant: r.fields['Comerç'],
@@ -101,5 +102,24 @@ export const getTicketsByQuarter = async (userPhone: string, startDate: Date, en
       console.error('Error connecting to Airtable:', error.message);
     }
     throw error;
+  }
+};
+
+export const getTicketImageUrl = async (recordId: string) => {
+  const { apiKey, baseId, tableName } = getAirtableConfig();
+  const url = `https://api.airtable.com/v0/${baseId}/${tableName}/${recordId}`;
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+      }
+    });
+
+    const fields = (response.data as any).fields;
+    return fields['Foto']?.[0]?.url || '';
+  } catch (error: any) {
+    console.error(`[Airtable] Error fetching image for ${recordId}:`, error.message);
+    return null;
   }
 };

@@ -10,6 +10,7 @@ import express from 'express';
 import { whatsappRouter } from './routes/whatsapp';
 import { stripeRouter } from './routes/stripe';
 import * as stripeService from './services/stripe';
+import * as airtableService from './services/airtable';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +37,21 @@ app.get('/p/:phone', async (req, res) => {
   } catch (error: any) {
     console.error('[ShortURL] Error redirecting to Stripe:', error.message);
     res.status(500).send('Error redirigint al pagament. Si us plau, proveu-ho més tard.');
+  }
+});
+
+// Dynamic redirect for Airtable attachments to avoid expired URLs
+app.get('/t/:id', async (req, res) => {
+  const recordId = req.params.id;
+  try {
+    const imageUrl = await airtableService.getTicketImageUrl(recordId);
+    if (!imageUrl) {
+      return res.status(404).send('No s\'ha trobat la imatge d\'aquest tiquet.');
+    }
+    res.redirect(imageUrl);
+  } catch (error: any) {
+    console.error(`[Redirect] Error fetching ticket ${recordId}:`, error.message);
+    res.status(500).send('Error al carregar la imatge. Si us plau, proveu-ho més tard.');
   }
 });
 
