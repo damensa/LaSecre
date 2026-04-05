@@ -23,9 +23,8 @@ export const sendExcelByEmail = async (to: string, filePath: string, phone: stri
     tls: {
       rejectUnauthorized: false,
     },
-    requireTLS: false,
+    requireTLS: true,
     name: user.split('@')[1] || 'tusecre.cat',
-    authMethod: 'LOGIN',
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 10000,
