@@ -68,7 +68,7 @@
                 <div class="absolute inset-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] pointer-events-none rounded-2xl">
                 </div>
                 <video class="w-full h-auto" autoplay loop muted playsinline>
-                    <source src="Lasecre Video.mp4" type="video/mp4">
+                    <source src="Lasecre%20Video.mp4" type="video/mp4">
                     El teu navegador no suporta la reproducció de vídeos.
                 </video>
             </div>
@@ -114,35 +114,63 @@
         </div>
     </section>
 
-    <!-- Secció Excel Demostració -->
+    <!-- Secció: Usuari demana el resum trimestral -->
     <section class="bg-[#FFFDF9] py-20 px-6 border-y border-orange-100">
         <div class="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-12 md:gap-20">
             <div class="flex-1 text-center md:text-left max-w-lg">
-                <h2 id="excel-title" class="text-3xl md:text-4xl font-bold mb-6 text-gray-900 leading-tight"
-                    data-i18n="excel-title">
-                    L'Excel pel teu gestor, només demanant-ho
+                <h2 id="excel-title" class="text-3xl md:text-4xl font-bold mb-6 text-gray-900 leading-tight" data-i18n="excel-title">
+                    Demana el resum en 3 paraules
                 </h2>
                 <p id="excel-text" class="text-lg md:text-xl text-gray-700 leading-relaxed mb-8" data-i18n="excel-text">
-                    Quan s'acabi el trimestre, només has de dir-li "exporta l'excel" i TuSecre prepararà un document
-                    perfecte amb tots els tiquets ordenats, llest per enviar. Menys maldecaps, més temps per a tu.
+                    Quan s'acabi el trimestre, escriu "envia'm el resum trimestral" al WhatsApp i TuSecre prepararà i enviarà automàticament l'informe complet al teu gestor. Sense formularis, sense webs, sense complicacions.
                 </p>
-                <div
-                    class="inline-flex items-center gap-2 bg-orange-50 px-5 py-3 rounded-full text-sm font-semibold shadow-sm text-orange-900 border border-orange-200">
-                    <span class="text-xl">✨</span> <span data-i18n="excel-badge">Més ràpid impossible</span>
+                <div class="inline-flex items-center gap-2 bg-orange-50 px-5 py-3 rounded-full text-sm font-semibold shadow-sm text-orange-900 border border-orange-200">
+                    <span class="text-xl">⚡</span> <span data-i18n="excel-badge">Menys de 10 segons</span>
                 </div>
             </div>
-            <div class="w-full max-w-2xl px-4">
-                <div class="rounded-xl overflow-hidden shadow-2xl border-[8px] border-gray-800 bg-gray-900 relative">
-                    <!-- Browser Chrome (Top Bar) -->
-                    <div class="bg-gray-800 h-6 flex items-center px-4 space-x-2">
-                        <div class="w-2 h-2 rounded-full bg-red-500"></div>
-                        <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
+            <div class="w-full max-w-[300px] mx-auto">
+                <!-- Marc de mòbil (WhatsApp) -->
+                <div class="rounded-[2.5rem] overflow-hidden shadow-2xl border-[6px] border-gray-800 bg-black relative">
+                    <div class="bg-gray-800 h-5 flex items-center justify-center">
+                        <div class="w-16 h-1 rounded-full bg-gray-600"></div>
                     </div>
-                    <video class="w-full h-auto relative z-0" autoplay loop muted playsinline>
-                        <source src="LaSecre_excel video.mp4" type="video/mp4">
+                    <video class="w-full h-auto" autoplay loop muted playsinline>
+                        <source src="LaSecre_excel_video.mp4" type="video/mp4">
                     </video>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Secció: El que veu el gestor -->
+    <section class="bg-gray-50 py-20 px-6">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-12">
+                <span class="inline-block bg-green-100 text-green-800 text-sm font-semibold px-4 py-1 rounded-full mb-4" data-i18n="gestor-badge">👨‍💼 El que veu el teu gestor</span>
+                <h2 id="gestor-title" class="text-3xl md:text-4xl font-bold text-gray-900" data-i18n="gestor-title">
+                    Un informe professional a la seva safata d'entrada
+                </h2>
+                <p id="gestor-text" class="text-lg text-gray-600 mt-4 max-w-2xl mx-auto" data-i18n="gestor-text">
+                    El gestor rep un email amb l'Excel adjunt. Cada línia té la data, el comerç, l'IVA i un enllaç directe a la foto del tiquet. Tot el que necessita per tancar el trimestre sense demanar-te res més.
+                </p>
+            </div>
+            <!-- Marc d'escriptori/email client -->
+            <div class="max-w-3xl mx-auto">
+                <div class="rounded-xl overflow-hidden shadow-2xl border-[6px] border-gray-300 bg-white">
+                    <!-- Barra superior estil email -->
+                    <div class="bg-gray-100 border-b border-gray-200 px-4 py-2 flex items-center gap-3">
+                        <div class="flex gap-1.5">
+                            <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                        </div>
+                        <div class="flex-1 bg-white rounded border border-gray-200 px-3 py-0.5 text-xs text-gray-400">📧 Correu de soc@tusecre.cat — Resum Trimestral Q2</div>
+                    </div>
+                    <video class="w-full h-auto" autoplay loop muted playsinline>
+                        <source src="Email_Gestor_Excel.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <p class="text-center text-sm text-gray-400 mt-3 italic" data-i18n="gestor-caption">Connexió directa a cada tiquet, sense que caduquin mai.</p>
             </div>
         </div>
     </section>
@@ -207,9 +235,13 @@
                 "price-cta": "Vull començar ara",
                 "copyright": "&copy; 2026 TuSecre. Tots els drets reservats.",
                 "wa-msg": "Hola TuSecre, vull el meu primer mes gratis.",
-                "excel-title": "El teu gestor et voldrà fer un monument",
-                "excel-text": "Hem dissenyat l'informe perfecte. El teu gestor rebrà un Excel polit amb tots els tiquets ordenats i, el més important: enllaços directes a les imatges que no caduquen mai. Ell estalvia temps, i tu maldecaps.",
-                "excel-badge": "Format professional AEAT",
+                "excel-title": "Demana el resum en 3 paraules",
+                "excel-text": "Quan s'acabi el trimestre, escriu \"envia'm el resum trimestral\" al WhatsApp i TuSecre prepararà i enviarà automàticament l'informe complet al teu gestor. Sense formularis, sense webs, sense complicacions.",
+                "excel-badge": "Menys de 10 segons",
+                "gestor-badge": "👨‍💼 El que veu el teu gestor",
+                "gestor-title": "Un informe professional a la seva safata d'entrada",
+                "gestor-text": "El gestor rep un email amb l'Excel adjunt. Cada línia té la data, el comerç, l'IVA i un enllaç directe a la foto del tiquet. Tot el que necessita per tancar el trimestre sense demanar-te res més.",
+                "gestor-caption": "Connexió directa a cada tiquet, sense que caduquin mai.",
                 "footer-privacy": "Política de Privacitat"
             },
             es: {
@@ -231,9 +263,13 @@
                 "price-cta": "Quiero empezar ahora",
                 "copyright": "&copy; 2026 TuSecre. Todos los derechos reservados.",
                 "wa-msg": "Hola TuSecre, quiero mi primer mes gratis.",
-                "excel-title": "Tu gestor te querrá hacer un monumento",
-                "excel-text": "Hemos diseñado el informe perfecto. Tu gestor recibirá un Excel impecable con todos los tickets ordenados y, lo más importante: enlaces directos a las imágenes que no caducan nunca. Él ahorra tiempo, y tú dolores de cabeza.",
-                "excel-badge": "Formato profesional AEAT",
+                "excel-title": "Pide el resumen en 3 palabras",
+                "excel-text": "Cuando acabe el trimestre, escribe \"envíame el resumen trimestral\" en WhatsApp y TuSecre preparará y enviará automáticamente el informe completo a tu gestor. Sin formularios, sin webs, sin complicaciones.",
+                "excel-badge": "Menos de 10 segundos",
+                "gestor-badge": "👨‍💼 Lo que ve tu gestor",
+                "gestor-title": "Un informe profesional en su bandeja de entrada",
+                "gestor-text": "El gestor recibe un email con el Excel adjunto. Cada línea tiene la fecha, el comercio, el IVA y un enlace directo a la foto del ticket. Todo lo que necesita para cerrar el trimestre sin pedirte nada más.",
+                "gestor-caption": "Enlace directo a cada ticket, sin que caduquen nunca.",
                 "footer-privacy": "Política de Privacidad"
             }
         };
