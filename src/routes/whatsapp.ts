@@ -92,9 +92,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
         // 1. Send welcome logo
         try {
           // Use the correct logo path in public/
-          const logoPath = path.join(process.cwd(), 'public', 'logo_LaSecre.PNG');
+          const logoPath = path.join(process.cwd(), 'public', 'logo-tusecre_v2.jpg');
           if (fs.existsSync(logoPath)) {
-            const mediaId = await whatsappService.uploadMedia(logoPath, 'image/png');
+            const mediaId = await whatsappService.uploadMedia(logoPath, 'image/jpeg');
             await whatsappService.sendWhatsAppImage(senderPhone, mediaId);
           } else {
             console.warn('[Onboarding] Logo file not found at:', logoPath);
@@ -107,7 +107,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
         if (isSpanish) {
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
-            "¡Hola jefe! 👔 Soy LaSecre. Ya te he activado tu **mes de prueba gratis**. Mi misión es que no vuelvas a picar ni un ticket a mano."
+            "¡Hola jefe! 👔 Soy TuSecre. Ya te he activado tu **mes de prueba gratis**. Mi misión es que no vuelvas a picar ni un ticket a mano."
           );
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
@@ -120,7 +120,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
         } else {
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
-            "Ei, jefe! 👔 Soc LaSecre. Ja t'he activat el teu **mes de prova de franc**. La meva missió és que no tornis a picar ni un tiquet a mà."
+            "Ei, jefe! 👔 Soc TuSecre. Ja t'he activat el teu **mes de prova de franc**. La meva missió és que no tornis a picar ni un tiquet a mà."
           );
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
