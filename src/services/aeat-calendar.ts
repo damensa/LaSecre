@@ -95,7 +95,17 @@ export async function sendAeatReminders(
   const reminderDays = [7, 2];
 
   for (const days of reminderDays) {
-    const events = await getEventsInNDays(days);
+    const rawEvents = await getEventsInNDays(days);
+
+    // Deduplicar per categoria + data (l'AEAT de vegades duplica entrades)
+    const seen = new Set<string>();
+    const events = rawEvents.filter((event: any) => {
+      const key = `${event.category}_${new Date(event.dueDate).toDateString()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     if (events.length === 0) continue;
 
     // Obtenir tots els usuaris actius que volen recordatoris
