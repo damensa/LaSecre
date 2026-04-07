@@ -7,10 +7,13 @@ console.log('Token Prefix:', process.env.WHATSAPP_TOKEN?.substring(0, 15));
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 import express from 'express';
+import cron from 'node-cron';
 import { whatsappRouter } from './routes/whatsapp';
 import { stripeRouter } from './routes/stripe';
 import * as stripeService from './services/stripe';
 import * as airtableService from './services/airtable';
+import * as aeatCalendar from './services/aeat-calendar';
+import * as whatsappService from './services/whatsapp';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -75,3 +78,21 @@ app.get('/health', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 TuSecre is running on port ${PORT}`);
 });
+
+// --- CRON JOBS ---
+
+// Sincronització setmanal del calendari AEAT (cada dilluns a les 6:00h)
+cron.schedule('0 6 * * 1', async () => {
+  console.log('[CRON] Running weekly AEAT calendar sync...');
+  await aeatCalendar.syncAeatCalendars();
+}, { timezone: 'Europe/Madrid' });
+
+// Enviament de recordatoris diaris a les 9:00h
+cron.schedule('0 9 * * *', async () => {
+  console.log('[CRON] Running daily AEAT reminders...');
+  await aeatCalendar.sendAeatReminders(
+    (phone: string, msg: string) => whatsappService.sendWhatsAppMessage(phone, msg).then(() => {})
+  );
+}, { timezone: 'Europe/Madrid' });
+
+console.log('[CRON] AEAT reminder jobs scheduled.');

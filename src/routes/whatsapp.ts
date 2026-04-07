@@ -215,6 +215,26 @@ whatsappRouter.post('/webhook', async (req, res) => {
                 ? `Fet jefe! He guardat ${email} a la teva fitxa. A partir d'ara, quan demanis el resum l'enviaré directament aquí.`
                 : `¡Hecho jefe! He guardado ${email} en tu ficha. A partir de ahora, cuando pidas el resumen lo enviaré directamente aquí.`;
             result.intent = 'SET_ACCOUNTANT';
+
+        // --- OPT-OUT/OPT-IN recordatoris fiscals ---
+        } else if (/sense recordatoris|sin recordatorios/i.test(text)) {
+            await (prisma as any).user.update({ where: { phone: senderPhone }, data: { aeatReminders: false } });
+            const historyText = history.map((m: any) => m.content).join(' ');
+            const isCat = /[l|d]'|'m |\b(el|la|meu|vull|puc)\b/i.test(text + historyText);
+            result.resposta = isCat
+                ? 'Entès jefe. Ja no rebràs més recordatoris fiscals de l\'AEAT. Pots reactivar-los quan vulguis escrivint "activa recordatoris".'
+                : 'Entendido jefe. Ya no recibirás más recordatorios fiscales de la AEAT. Puedes reactivarlos escribiendo "activa recordatorios".';
+            result.intent = 'OPT_OUT_REMINDERS';
+
+        } else if (/activa recordatoris|activa recordatorios/i.test(text)) {
+            await (prisma as any).user.update({ where: { phone: senderPhone }, data: { aeatReminders: true } });
+            const historyText = history.map((m: any) => m.content).join(' ');
+            const isCat = /[l|d]'|'m |\b(el|la|meu|vull|puc)\b/i.test(text + historyText);
+            result.resposta = isCat
+                ? '✅ Fet jefe! Tornaràs a rebre recordatoris fiscals 7 dies i 2 dies abans de cada venciment de l\'AEAT.'
+                : '✅ Hecho jefe! Volverás a recibir recordatorios fiscales 7 días y 2 días antes de cada vencimiento de la AEAT.';
+            result.intent = 'OPT_IN_REMINDERS';
+
         } else {
             // Only call Gemini if it's not a direct command
             result = await geminiService.chatWithContext(formattedHistory, text);

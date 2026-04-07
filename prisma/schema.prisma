@@ -21,6 +21,28 @@ model User {
   postalCode    String?
   city          String?
   updatedAt     DateTime @updatedAt
+  aeatReminders Boolean  @default(true)
+}
+
+model AeatEvent {
+  id          String   @id @default(uuid())
+  uid         String   @unique
+  title       String
+  description String?
+  dueDate     DateTime
+  category    String   // "IVA", "RENDA", "INFORMATIVA"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AeatReminder {
+  id                 String   @id @default(uuid())
+  userPhone          String
+  aeatEventId        String
+  sentAt             DateTime @default(now())
+  daysBeforeDeadline Int
+
+  @@unique([userPhone, aeatEventId, daysBeforeDeadline])
 }
 
 model Receipt {
