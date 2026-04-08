@@ -8,6 +8,7 @@ import * as airtableService from '../services/airtable';
 import * as stripeService from '../services/stripe';
 import * as emailService from '../services/email';
 import prisma from '../utils/prisma';
+import { startOfQuarter, endOfQuarter } from 'date-fns';
 
 export const whatsappRouter = Router();
 const processedMessages = new Set<string>();
@@ -364,8 +365,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
                 const now = new Date();
                 const year = now.getFullYear();
                 const quarter = Math.floor(now.getMonth() / 3) + 1;
-                const startDate = require('date-fns').startOfQuarter(now);
-                const endDate = require('date-fns').endOfQuarter(now);
+                const startDate = startOfQuarter(now);
+                const endDate = endOfQuarter(now);
 
                 const records = await airtableService.getTicketsByQuarter(senderPhone, startDate, endDate);
                 
