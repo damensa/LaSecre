@@ -19,33 +19,33 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
     return null;
   }
 
-  // 3. Crear l'Excel (la resta de la lògica es manté igual)
+  // 3. Crear l'Excel amb dues pestanyes
   const workbook = new Workbook();
-  const worksheet = workbook.addWorksheet(`Trimestre ${quarter} - ${year}`);
-
-  worksheet.columns = [
-    { header: 'Data Registre', key: 'createdAt', width: 20 },
-    { header: 'Data Tiquet', key: 'date', width: 15 },
-    { header: 'Comerç', key: 'merchant', width: 25 },
-    { header: 'CIF', key: 'cif', width: 15 },
-    { header: 'Tipus Document', key: 'invoiceType', width: 20 },
-    { header: 'Núm. Factura', key: 'invoiceNumber', width: 15 },
-    { header: 'Import Total', key: 'total', width: 15 },
-    { header: 'Base Imposable', key: 'baseAmount', width: 15 },
-    { header: '% IVA', key: 'vatPercentage', width: 10 },
-    { header: 'Quota_IVA', key: 'vat', width: 15 },
-    { header: 'Categoria', key: 'category', width: 20 },
-    { header: 'Enllaç Foto', key: 'imageUrl', width: 30 },
-  ];
-
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
+  
+  const setupSheet = (sheet: any) => {
+    sheet.columns = [
+      { header: 'Data Registre', key: 'createdAt', width: 20 },
+      { header: 'Data Tiquet', key: 'date', width: 15 },
+      { header: 'Comerç', key: 'merchant', width: 25 },
+      { header: 'CIF', key: 'cif', width: 15 },
+      { header: 'Tipus Document', key: 'invoiceType', width: 20 },
+      { header: 'Núm. Factura', key: 'invoiceNumber', width: 15 },
+      { header: 'Import Total', key: 'total', width: 15 },
+      { header: 'Base Imposable', key: 'baseAmount', width: 15 },
+      { header: '% IVA', key: 'vatPercentage', width: 10 },
+      { header: 'Quota_IVA', key: 'vat', width: 15 },
+      { header: 'Categoria', key: 'category', width: 20 },
+      { header: 'Enllaç Foto', key: 'imageUrl', width: 30 },
+    ];
+    sheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
   };
 
-  filteredReceipts.forEach((r: any) => {
-    worksheet.addRow({
+  const addReceiptToSheet = (sheet: any, r: any) => {
+    sheet.addRow({
       createdAt: r.createdAt.toLocaleString('ca-ES'),
       date: r.date,
       merchant: r.merchant,
@@ -59,6 +59,20 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
       category: r.category,
       imageUrl: r.id ? { text: '🔗 Veure tiquet', hyperlink: `https://tusecre.cat/t/${r.id}`, tooltip: 'Obrir imatge' } : ''
     });
+  };
+
+  const purchasesSheet = workbook.addWorksheet('COMPRES');
+  const salesSheet = workbook.addWorksheet('VENDES');
+
+  setupSheet(purchasesSheet);
+  setupSheet(salesSheet);
+
+  filteredReceipts.forEach((r: any) => {
+    if (r.type === 'VENDA' || r.type === 'SALE') {
+      addReceiptToSheet(salesSheet, r);
+    } else {
+      addReceiptToSheet(purchasesSheet, r);
+    }
   });
 
   // 5. Guardar fitxer temporal

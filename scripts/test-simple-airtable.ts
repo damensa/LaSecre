@@ -22,7 +22,7 @@ async function testSimple() {
       },
       { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
     );
-    console.log('✅ Success! Record created.', response.data.records[0].id);
+    console.log('✅ Success! Record created.', (response as any).data.records[0].id);
   } catch (error: any) {
     console.error('❌ Error:', error.response?.data || error.message);
   }

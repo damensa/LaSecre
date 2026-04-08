@@ -32,6 +32,7 @@ export const createTicket = async (data: any) => {
               'Base_Imposable': data.base_imposable || 0,
               'Categoria': data.categoria || '',
               'Estat': 'Pendent',
+              'Tipus': data.tipus || 'COMPRA',
               // Airtable Attachment field expects an array of objects with a 'url' property
               // We'll use 'Foto' as the field name for the attachment
               'Foto': [
@@ -93,6 +94,7 @@ export const getTicketsByQuarter = async (userPhone: string, startDate: Date, en
       vatPercentage: r.fields['Percentatge_IVA'],
       baseAmount: r.fields['Base_Imposable'],
       category: r.fields['Categoria'],
+      type: r.fields['Tipus'] || 'COMPRA',
       imageUrl: r.fields['Foto']?.[0]?.url || ''
     }));
   } catch (error: any) {

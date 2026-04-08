@@ -117,6 +117,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
             senderPhone, 
             "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'\n\nAl usar TuSecre, aceptas nuestra política de privacidad: https://tusecre.cat/politica"
           );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone,
+            "¡Ah! Y por cierto jefe, una cosa muy importante: **pásame tu NIF/CIF** cuando puedas. Así, si les haces fotos a tus propias facturas de venta, yo sabré que son tuyas y te las pondré en un apartado separado en tu resumen del Excel. ✨\n\nSolo tienes que escribirme: 'mi NIF es 12345678X' o 'CIF: B12345678'."
+          );
         } else {
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
@@ -129,6 +133,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
           await whatsappService.sendWhatsAppMessage(
             senderPhone, 
             "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'\n\nEn utilitzar TuSecre, acceptes la nostra política de privacitat: https://tusecre.cat/politica"
+          );
+          await whatsappService.sendWhatsAppMessage(
+            senderPhone,
+            "Ah! I per cert jefe, una cosa molt important: **passa'm el teu NIF/CIF** quan puguis. Així, si fas fotos a les teves pròpies factures de venda, jo sabré que són teves i te les posaré en un apartat separat al teu resum de l'Excel. ✨\n\nNomés m'has d'escriure: 'el meu NIF és 12345678X' o 'CIF: B12345678'."
           );
         }
 
@@ -399,7 +407,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
           });
 
           const base64Image = await whatsappService.downloadMedia(mediaId);
-          const analysis = await geminiService.analyzeReceipt(base64Image, langHint);
+          const userNif = currentUser?.nif || undefined;
+          const analysis = await geminiService.analyzeReceipt(base64Image, langHint, userNif);
 
           // Save image to public folder to allow Airtable to download it
           const host = req.get('host');
@@ -413,7 +422,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
           const finalImageUrl = `${baseUrl}/temp_uploads/${mediaId}.jpg`;
 
-          await prisma.receipt.create({
+          await (prisma as any).receipt.create({
             data: {
               userPhone: senderPhone,
               merchant: analysis.comerç,
@@ -426,7 +435,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
               cif: analysis.cif,
               invoiceNumber: analysis.numero_factura,
               invoiceType: analysis.tipus_document,
-              imageUrl: finalImageUrl
+              imageUrl: finalImageUrl,
+              type: analysis.tipus === 'VENDA' ? 'SALE' : 'PURCHASE'
             }
           });
 

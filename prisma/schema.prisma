@@ -59,6 +59,7 @@ model Receipt {
   invoiceNumber String?
   invoiceType   String?
   imageUrl      String?
+  type          String   @default("PURCHASE") // PURCHASE (compra), SALE (venda)
   createdAt     DateTime @default(now())
 }
 
