@@ -269,14 +269,12 @@ whatsappRouter.post('/webhook', async (req, res) => {
         }
 
         // Determine language context: prioritize current message language
-        const historyText = history.map((m: any) => m.content).join(' ');
+        // (historyText removed here as it was redundant/declaring in same scope)
         
         // Check for Catalan markers like apostrophes or unique letters
         const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
         const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo)\b/i.test(text));
-        
-        // Final decision: if it doesn't look like Spanish but looks like Catalan, use Catalan. Default to previous history check if unsure.
-        const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText));
+        const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(history.map((m: any) => m.content).join(' ')));
 
         if (result.intent === 'EXPORT_QUARTER') {
           // Send the explanatory message first (from Gemini)
@@ -475,10 +473,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
               userPhone: senderPhone,
               merchant: analysis.comerç,
               date: analysis.data,
-              total: analysis.import_total,
-              vat: analysis.import_iva,
-              vatPercentage: analysis.percentatge_iva,
-              baseAmount: analysis.base_imposable,
+              total: Number(analysis.import_total || 0),
+              vat: Number(analysis.import_iva || 0),
+              vatPercentage: Number(analysis.percentatge_iva || 0),
+              baseAmount: Number(analysis.base_imposable || 0),
               category: analysis.categoria,
               cif: analysis.cif,
               invoiceNumber: analysis.numero_factura,
