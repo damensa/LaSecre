@@ -60,6 +60,8 @@ model Receipt {
   invoiceType   String?
   imageUrl      String?
   type          String   @default("PURCHASE") // PURCHASE (compra), SALE (venda)
+  retentionAmount   Float?
+  retentionPercentage Float?
   createdAt     DateTime @default(now())
 }
 

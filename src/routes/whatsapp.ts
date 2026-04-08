@@ -359,6 +359,53 @@ whatsappRouter.post('/webhook', async (req, res) => {
             return;
         }
 
+        if (result.intent === 'GET_BALANCE') {
+            try {
+                const now = new Date();
+                const year = now.getFullYear();
+                const quarter = Math.floor(now.getMonth() / 3) + 1;
+                const startDate = require('date-fns').startOfQuarter(now);
+                const endDate = require('date-fns').endOfQuarter(now);
+
+                const records = await airtableService.getTicketsByQuarter(senderPhone, startDate, endDate);
+                
+                let ivaSoportat = 0; // Compres
+                let ivaRepercutit = 0; // Vendes
+                let retencionsAbonades = 0; // Vendes (IRPF que t'han retingut)
+                let retencionsAPagar = 0; // Compres (IRPF que has de pagar tu a l'AEAT)
+
+                records.forEach((r: any) => {
+                    const isSale = r.type === 'SALE' || r.type === 'VENDA';
+                    if (isSale) {
+                        ivaRepercutit += (r.vat || 0);
+                        retencionsAbonades += (r.retention || 0);
+                    } else {
+                        ivaSoportat += (r.vat || 0);
+                        retencionsAPagar += (r.retention || 0);
+                    }
+                });
+
+                const balancIVA = ivaRepercutit - ivaSoportat;
+                
+                const balanceMsg = finalIsSpanish
+                    ? `📊 *Balanç actual Q${quarter} ${year}*\n\n` +
+                      `· IVA a pagar: *${balancIVA.toFixed(2)}€* (Ventas: ${ivaRepercutit.toFixed(2)}€ | Compras: ${ivaSoportat.toFixed(2)}€)\n` +
+                      `· Retenciones IRPF a ingresar (Mod. 111): *${retencionsAPagar.toFixed(2)}€*\n` +
+                      `· Retenciones sufridas (a cuenta Renta): *${retencionsAbonades.toFixed(2)}€*\n\n` +
+                      `_Nota: Aquest càlcul es basa en les fotos que m'has enviat aquest trimestre._`
+                    : `📊 *Balanç actual Q${quarter} ${year}*\n\n` +
+                      `· IVA a pagar: *${balancIVA.toFixed(2)}€* (Vendes: ${ivaRepercutit.toFixed(2)}€ | Compres: ${ivaSoportat.toFixed(2)}€)\n` +
+                      `· Retencions IRPF a ingressar (Mod. 111): *${retencionsAPagar.toFixed(2)}€*\n` +
+                      `· Retencions que t'han fet (a compte Renda): *${retencionsAbonades.toFixed(2)}€*\n\n` +
+                      `_Nota: Aquest càlcul es basa en les fotos que m'has enviat aquest trimestre._`;
+
+                await whatsappService.sendWhatsAppMessage(senderPhone, balanceMsg);
+                return;
+            } catch (err) {
+                console.error('Balance error:', err);
+            }
+        }
+
         if (result.intent === 'DELETE_DATA') {
             try {
                 await userService.deleteUser(senderPhone);
@@ -436,7 +483,9 @@ whatsappRouter.post('/webhook', async (req, res) => {
               invoiceNumber: analysis.numero_factura,
               invoiceType: analysis.tipus_document,
               imageUrl: finalImageUrl,
-              type: analysis.tipus === 'VENDA' ? 'SALE' : 'PURCHASE'
+              type: analysis.tipus === 'VENDA' ? 'SALE' : 'PURCHASE',
+              retentionAmount: analysis.import_retencio || 0,
+              retentionPercentage: analysis.percentatge_retencio || 0
             }
           });
 

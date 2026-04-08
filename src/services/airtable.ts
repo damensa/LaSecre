@@ -30,6 +30,8 @@ export const createTicket = async (data: any) => {
               'Quota_IVA': data.import_iva || 0,
               'Percentatge_IVA': data.percentatge_iva || 0,
               'Base_Imposable': data.base_imposable || 0,
+              'Import_Retencio': data.import_retencio || 0,
+              'Percentatge_Retencio': data.percentatge_retencio || 0,
               'Categoria': data.categoria || '',
               'Estat': 'Pendent',
               'Tipus': data.tipus || 'COMPRA',
@@ -93,6 +95,8 @@ export const getTicketsByQuarter = async (userPhone: string, startDate: Date, en
       vat: r.fields['Quota_IVA'],
       vatPercentage: r.fields['Percentatge_IVA'],
       baseAmount: r.fields['Base_Imposable'],
+      retention: r.fields['Import_Retencio'] || 0,
+      retentionPercentage: r.fields['Percentatge_Retencio'] || 0,
       category: r.fields['Categoria'],
       type: r.fields['Tipus'] || 'COMPRA',
       imageUrl: r.fields['Foto']?.[0]?.url || ''

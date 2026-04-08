@@ -34,6 +34,8 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
       { header: 'Base Imposable', key: 'baseAmount', width: 15 },
       { header: '% IVA', key: 'vatPercentage', width: 10 },
       { header: 'Quota_IVA', key: 'vat', width: 15 },
+      { header: 'Retenció (IRPF)', key: 'retention', width: 15 },
+      { header: '% Retenció', key: 'retentionPercentage', width: 10 },
       { header: 'Categoria', key: 'category', width: 20 },
       { header: 'Enllaç Foto', key: 'imageUrl', width: 30 },
     ];
@@ -56,6 +58,8 @@ export const generateQuarterlyExcel = async (userPhone: string, year: number, qu
       baseAmount: r.baseAmount,
       vatPercentage: r.vatPercentage,
       vat: r.vat,
+      retention: r.retention,
+      retentionPercentage: r.retentionPercentage,
       category: r.category,
       imageUrl: r.id ? { text: '🔗 Veure tiquet', hyperlink: `https://tusecre.cat/t/${r.id}`, tooltip: 'Obrir imatge' } : ''
     });

@@ -37,9 +37,11 @@ Format JSON:
   "base_imposable": 0.0,
   "percentatge_iva": 0,
   "import_iva": 0.0,
+  "import_retencio": 0.0,
+  "percentatge_retencio": 0,
   "categoria": "categoria",
   "tipus": "COMPRA o VENDA",
-  "resposta_lasecre": "Genera aquesta resposta exacta imitant l'idioma de l'usuari i canviant [import_total], [comerç] i el [tipus_humà] (compra/venda). CATALÀ (venda): 'Fet jefe! He registrat la teva factura de venda de [import_total]€ per a [comerç]. Així m'agrada, fent caixa! Ja ho tinc tot apuntat per al resum del trimestre.' CATALÀ (compra): 'Fet. Ja he caçat els [import_total]€ de [comerç]. Jo ja m'ho he apuntat tot perquè tu no hagis de pensar-hi més. El teu gestor ja té la feina mig feta. Ara, guarda el tiquet a la teva carpeta de seguretat.' CASTELLÀ (venta): '¡Hecho jefe! He registrado tu factura de venta de [import_total]€ para [comerç]. ¡Así me gusta, haciendo caja! Ya lo tengo todo apuntado para el resumen del trimestre.' CASTELLÀ (compra): 'Hecho. Ya he cazado los [import_total]€ de [comerç]. Yo ya me lo he apuntado todo para que no tengas que pensar más. Tu gestor ya tiene el trabajo a medias. Ahora, guarda el ticket en tu carpeta de seguridad.'"
+  "resposta_lasecre": "Genera aquesta resposta exacta imitant l'idioma de l'usuari i canviant [import_total], [comerç] i el [tipus_humà] (compra/venda). Afegeix una menció a la retenció si n'hi ha. CATALÀ (venda): 'Fet jefe! He registrat la teva factura de venda de [import_total]€ per a [comerç]. Així m'agrada, fent caixa! Ja ho tinc tot apuntat per al resum del trimestre.' CATALÀ (compra): 'Fet. Ja he caçat els [import_total]€ de [comerç]. Jo ja m'ho he apuntat tot perquè tu no hagis de pensar-hi més. El teu gestor ja té la feina mig feta. Ara, guarda el tiquet a la teva carpeta de seguretat.' Si hi ha retenció en compra, afegeix: 'He vist la retenció, jo ho apunto però recorda que t'enviaràs tu mateix amb el model 111 o el gestor.' CASTELLÀ (venta): '¡Hecho jefe! He registrado tu factura de venta de [import_total]€ para [comerç]. ¡Así me gusta, haciendo caja! Ya lo tengo todo apuntado para el resumen del trimestre.' CASTELLÀ (compra): 'Hecho. Ya he cazado los [import_total]€ de [comerç]. Yo ya me lo he apuntado todo para que no tengas que pensar más. Tu gestor ya tiene el trabajo a medias. Ahora, guarda el ticket en tu carpeta de seguridad.'"
 }`;
 
     const result = await model.generateContent([
@@ -99,7 +101,7 @@ Accions especials:
 Ets capaç de detectar si l'usuari demana coses que requereixen accions del sistema. Hauràs de retornar UN JSON amb el següent format:
 {
   "resposta": "La teva resposta per l'usuari mantenint la personalitat de TuSecre. IMPORTANT: Si demana el resum/excel, confirma que t'hi poses ara mateix i que l'enviaràs per aquí (WhatsApp). No diguis 'al teu correu' a no ser que l'usuari hagi indicat expressament que vol que l'enviïs allà.",
-  "intent": "EXPORT_QUARTER" | "SET_ACCOUNTANT" | "SET_FISCAL_DATA" | "DELETE_DATA" | "NONE",
+  "intent": "EXPORT_QUARTER" | "SET_ACCOUNTANT" | "SET_FISCAL_DATA" | "DELETE_DATA" | "GET_BALANCE" | "NONE",
   "extra": { 
      "email": "nom@email.com", // Només si l'intent és SET_ACCOUNTANT
      "fiscalData": { "name": "Effiguard SA", "nif": "B12345678", "address": "Carrer Major 12, 08001 BCN" } // Només si l'intent és SET_FISCAL_DATA
@@ -107,6 +109,7 @@ Ets capaç de detectar si l'usuari demana coses que requereixen accions del sist
 }
 
 Usa EXPORT_QUARTER quan l'usuari demani el resum, l'excel, les dades de facturació, el trimestre, etc.
+Usa GET_BALANCE quan l'usuari pregunti per l'estat de les seves finances, quant IVA porta, balanç del trimestre, "com vaig de diners", "quant hauré de pagar", etc.
 Usa SET_ACCOUNTANT quan l'usuari vulgui configurar o canviar l'email del seu gestor.
 Usa SET_FISCAL_DATA quan l'usuari demani posar les seves dades per a la factura, "dades fiscals", "vull factura", etc.
 Usa DELETE_DATA quan l'usuari vulgui esborrar totes les seves dades o donar-se de baixa. Explica'ls que és una acció irreversible.
