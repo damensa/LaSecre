@@ -1,12 +1,13 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI((process.env.GEMINI_API_KEY || '').trim());
+const ANALYSIS_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+const CHAT_MODELS = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
 
 export const analyzeReceipt = async (base64Image: string, languageHint: string = "dedueix-ho o català", userNif?: string) => {
-  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
   let lastError = null;
 
-  for (const modelName of modelsToTry) {
+  for (const modelName of ANALYSIS_MODELS) {
     try {
       console.log(`[Gemini] Attempting model: ${modelName} for Receipt Analysis`);
       const model = genAI.getGenerativeModel({ model: modelName });
@@ -73,10 +74,9 @@ Format JSON:
 };
 
 export const chatWithContext = async (history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string) => {
-  const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
   let lastError = null;
 
-  for (const modelName of modelsToTry) {
+  for (const modelName of CHAT_MODELS) {
     try {
       console.log(`[Gemini] Attempting model: ${modelName} for Chat`);
       const model = genAI.getGenerativeModel({ model: modelName });
