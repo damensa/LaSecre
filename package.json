@@ -32,7 +32,6 @@
     "node-cron": "^4.2.1",
     "node-ical": "^0.26.0",
     "nodemailer": "^8.0.4",
-    "prisma": "^6.19.2",
     "stripe": "^20.4.1"
   },
   "devDependencies": {
@@ -45,6 +44,7 @@
     "@types/stripe": "^8.0.416",
     "cross-env": "^10.1.0",
     "nodemon": "^3.1.14",
+    "prisma": "^6.19.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }

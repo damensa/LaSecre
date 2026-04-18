@@ -9,7 +9,7 @@ generator client {
 
 model User {
   phone         String   @id
-  status        String   @default("FREE") // FREE, PAID
+  status        String   @default("FREE")
   monthlyCount  Int      @default(0)
   lastReset     DateTime @default(now())
   createdAt     DateTime @default(now())
@@ -30,7 +30,7 @@ model AeatEvent {
   title       String
   description String?
   dueDate     DateTime
-  category    String   // "IVA", "RENDA", "INFORMATIVA"
+  category    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -41,7 +41,6 @@ model AeatReminder {
   aeatEventId        String
   sentAt             DateTime @default(now())
   daysBeforeDeadline Int
-
   @@unique([userPhone, aeatEventId, daysBeforeDeadline])
 }
 
@@ -59,23 +58,27 @@ model Receipt {
   invoiceNumber String?
   invoiceType   String?
   imageUrl      String?
-  type          String   @default("PURCHASE") // PURCHASE (compra), SALE (venda)
+  type          String   @default("PURCHASE")
   retentionAmount   Float?
   retentionPercentage Float?
-  createdAt     DateTime @default(now())
+  reviewRequired    Boolean  @default(false)
+  validationIssues  String?
+  aeatSummary       String?
+  aeatSources       String?
+  createdAt         DateTime @default(now())
 }
 
 model WebhookEvent {
   messageId String   @id
   timestamp DateTime @default(now())
-  status    String   @default("RECEIVED") // RECEIVED, PROCESSING, PROCESSED, ERROR
+  status    String   @default("RECEIVED")
   errorMessage String?
 }
 
 model Message {
   id        String   @id @default(uuid())
   userPhone String
-  role      String   // 'user' or 'model'
+  role      String
   content   String
   createdAt DateTime @default(now())
 }

@@ -4,14 +4,218 @@ import fs from 'fs';
 import path from 'path';
 import * as userService from '../services/user';
 import * as geminiService from '../services/gemini';
+import * as fiscalChatService from '../services/fiscal-chat';
+import * as receiptFlowService from '../services/receipt-flow';
 import * as airtableService from '../services/airtable';
 import * as stripeService from '../services/stripe';
 import * as emailService from '../services/email';
 import prisma from '../utils/prisma';
+import { normalizePhone } from '../utils/phone';
 import { startOfQuarter, endOfQuarter } from 'date-fns';
 
 export const whatsappRouter = Router();
 const processedMessages = new Set<string>();
+const MANAGER_REGEX = /gestor[:\s=]*([^\s@]+@[^\s@]+\.[^\s@]+)/i;
+
+function detectCatalan(text: string) {
+  return /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc|tiquet|amb|per|els)\b/i.test(text);
+}
+
+function detectSpanish(text: string) {
+  return /[¿¡]|\b(el|la|mi|resumen|quiero|puedo|pasa|por|papeleo|y|los|las|con|pero|como)\b/i.test(text);
+}
+
+function prefersSpanish(currentText: string, fallbackText = '') {
+  const isCatalan = detectCatalan(currentText);
+  const isSpanish = !isCatalan && detectSpanish(currentText);
+  return (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && detectSpanish(fallbackText));
+}
+
+async function sendWelcomeSequence(senderPhone: string, incomingText: string) {
+  const isCatalan = detectCatalan(incomingText);
+  const isSpanish = !isCatalan;
+
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'logo-tusecre_v2.jpg');
+    if (fs.existsSync(logoPath)) {
+      const mediaId = await whatsappService.uploadMedia(logoPath, 'image/jpeg');
+      await whatsappService.sendWhatsAppImage(senderPhone, mediaId);
+    } else {
+      console.warn('[Onboarding] Logo file not found at:', logoPath);
+    }
+  } catch (logoError) {
+    console.error('[Onboarding] Error sending welcome logo:', logoError);
+  }
+
+  const messages = isSpanish
+    ? [
+        "¡Hola jefe! 👔 Soy TuSecre. Ya te he activado tu **mes de prueba gratis**. Mi misión es que no vuelvas a picar ni un ticket a mano.",
+        "Cómo funciono: Cada vez que tengas un ticket o factura, **hazle una foto y mándamela por aquí mismo**. Yo leo el importe, el IVA y lo guardo todo por ti.",
+        "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'\n\nAl usar TuSecre, aceptas nuestra política de privacidad: https://tusecre.cat/politica",
+        "¡Ah! Y por cierto jefe, una cosa muy importante: **pásame tu NIF/CIF** cuando puedas. Así, si les haces fotos a tus propias facturas de venta, yo sabré que son tuyas y te las pondré en un apartado separado en tu resumen del Excel. ✨\n\nSolo tienes que escribirme: 'mi NIF es 12345678X' o 'CIF: B12345678'."
+      ]
+    : [
+        "Ei, jefe! 👔 Soc TuSecre. Ja t'he activat el teu **mes de prova de franc**. La meva missió és que no tornis a picar ni un tiquet a mà.",
+        "Com funciona: Cada vegada que tinguis un tiquet o factura, **fes-li una foto i envia-me-la per aquí**. Jo llegiré l'import, l'IVA i ho guardaré tot per tu.",
+        "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'\n\nEn utilitzar TuSecre, acceptes la nostra política de privacitat: https://tusecre.cat/politica",
+        "Ah! I per cert jefe, una cosa molt important: **passa'm el teu NIF/CIF** quan puguis. Així, si fas fotos a les teves pròpies factures de venda, jo sabré que són teves i te les posaré en un apartat separat al teu resum de l'Excel. ✨\n\nNomés m'has d'escriure: 'el meu NIF és 12345678X' o 'CIF: B12345678'."
+      ];
+
+  for (const msg of messages) {
+    await whatsappService.sendWhatsAppMessage(senderPhone, msg);
+  }
+
+  const match = incomingText.match(MANAGER_REGEX);
+  if (match) {
+    const email = match[1];
+    await userService.updateAccountantEmail(senderPhone, email);
+    await whatsappService.sendWhatsAppMessage(
+      senderPhone,
+      isSpanish
+        ? `¡Perfecto jefe! He guardado ${email} como tu gestor.`
+        : `Perfecte jefe! He guardat ${email} com el teu gestor.`
+    );
+  }
+}
+
+async function processReceiptImage(params: {
+  senderPhone: string;
+  messageId: string;
+  mediaId: string;
+  langHint: string;
+  isSpanish: boolean;
+  userNif?: string;
+  host?: string;
+}) {
+  const { senderPhone, messageId, mediaId, langHint, isSpanish, userNif, host } = params;
+
+  const waitMsg = isSpanish ? 'Lo estoy mirando... un momento.' : 'Ho estic mirant... un moment.';
+  await whatsappService.sendWhatsAppMessage(senderPhone, waitMsg);
+
+  try {
+    await (prisma as any).webhookEvent.upsert({
+      where: { messageId },
+      update: { status: 'PROCESSING' },
+      create: { messageId, status: 'PROCESSING' }
+    });
+
+    const base64Image = await whatsappService.downloadMedia(mediaId);
+    const { final: analysis, validation } = await receiptFlowService.runReceiptAnalysisFlow({
+      base64Image,
+      languageHint: langHint,
+      userNif,
+    });
+
+    const baseUrl = process.env.PUBLIC_URL || `https://${host}`;
+    const uploadsDir = path.join(process.cwd(), 'public', 'temp_uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const imagePath = path.join(uploadsDir, `${mediaId}.jpg`);
+    fs.writeFileSync(imagePath, Buffer.from(base64Image, 'base64'));
+    const finalImageUrl = `${baseUrl}/temp_uploads/${mediaId}.jpg`;
+
+    await (prisma as any).receipt.create({
+      data: {
+        userPhone: senderPhone,
+        merchant: analysis.comerç,
+        date: analysis.data,
+        total: Number(analysis.import_total || 0),
+        vat: Number(analysis.import_iva || 0),
+        vatPercentage: Number(analysis.percentatge_iva || 0),
+        baseAmount: Number(analysis.base_imposable || 0),
+        category: analysis.categoria,
+        cif: analysis.cif,
+        invoiceNumber: analysis.numero_factura,
+        invoiceType: validation.reviewRequired ? `${analysis.tipus_document} [REVIEW]` : analysis.tipus_document,
+        imageUrl: finalImageUrl,
+        type: analysis.tipus === 'VENDA' ? 'SALE' : 'PURCHASE',
+        retentionAmount: analysis.import_retencio || 0,
+        retentionPercentage: analysis.percentatge_retencio || 0,
+        aeatSummary: validation.aeatResearch?.summary,
+        aeatSources: validation.aeatResearch?.sources?.length ? JSON.stringify(validation.aeatResearch.sources) : null,
+        validationIssues: validation.issues.length ? JSON.stringify(validation.issues) : null,
+        reviewRequired: validation.reviewRequired
+      }
+    });
+
+    try {
+      await airtableService.createTicket({
+        ...analysis,
+        phone: senderPhone,
+        imageUrl: finalImageUrl,
+        aeatSummary: validation.aeatResearch?.summary,
+        aeatSources: validation.aeatResearch?.sources,
+        validationIssues: validation.issues,
+        reviewRequired: validation.reviewRequired
+      });
+      console.log('[Airtable] Ticket created successfully');
+    } catch (airtableError: any) {
+      console.error('[Airtable] Error saving ticket:', airtableError.message);
+    }
+
+    console.log('[ReceiptFlow] Saved receipt', {
+      userPhone: senderPhone,
+      merchant: analysis.comerç,
+      total: analysis.import_total,
+      reviewRequired: validation.reviewRequired,
+      validationIssues: validation.issues.length,
+      aeatSummary: validation.aeatResearch?.summary || null,
+    });
+
+    await userService.incrementMonthlyCount(senderPhone);
+    const responseMsg = analysis.resposta_lasecre || `¡Recibido! He registrado tu gasto de ${analysis.import_total} € en ${analysis.comerç}. Ya lo tienes en tu panel de Effiguard. Recuerda guardar el papel en tu carpeta de seguridad.`;
+    await whatsappService.sendWhatsAppMessage(senderPhone, responseMsg);
+
+    await (prisma as any).webhookEvent.update({
+      where: { messageId },
+      data: { status: 'PROCESSED' }
+    });
+  } catch (error: any) {
+    console.error('Error processing receipt:', error);
+
+    const errorString = JSON.stringify(error);
+    const isQuotaError = error.message?.includes('429') ||
+      error.response?.data?.error?.message?.includes('quota') ||
+      errorString.includes('429');
+    const isParseError = error.code === 'EXTRACTION_PARSE_FAILED' || error.message?.includes('No JSON object found');
+    const isModelUnavailable = error.code === 'MODEL_UNAVAILABLE';
+    const isExtractionError = error.code === 'EXTRACTION_FAILED';
+
+    let errorMsg = isSpanish
+      ? 'Oye jefe, esta foto está muy borrosa y no veo nada. Vuelve a intentarlo o Hacienda no te devolverá ni un céntimo de esto.'
+      : "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.";
+
+    if (isQuotaError) {
+      errorMsg = isSpanish
+        ? '¡Ostras jefe! Google me ha cortado el grifo (error de cuota). Espérate un minuto y vuelve a mandarme la foto, que ahora mismo estoy colapsada.'
+        : "Ostres jefe! Google m'ha tallat l'aixeta (error de quota). Espera't un minut i torna'm a enviar la foto, que ara mateix estic col·lapsada.";
+    } else if (isParseError) {
+      errorMsg = isSpanish
+        ? 'He podido leer algo, pero el extractor me ha devuelto una respuesta mal montada. Reenvíame la foto y si vuelve a pasar lo reviso yo por dentro.'
+        : "He pogut llegir alguna cosa, però l'extractor m'ha tornat una resposta mal muntada. Reenvia'm la foto i si torna a passar ho reviso jo per dins.";
+    } else if (isModelUnavailable) {
+      errorMsg = isSpanish
+        ? 'Hoy tengo un modelo de Google caído o mal configurado. No es tu foto. Dame un momento y lo arreglo.'
+        : "Avui tinc un model de Google caigut o mal configurat. No és la teva foto. Dona'm un moment i ho arreglo.";
+    } else if (isExtractionError) {
+      errorMsg = isSpanish
+        ? 'No he sido capaz de sacar los datos del ticket. Puede ser la foto, o puede ser que Google hoy vaya tortuga. Reenvíamela una vez más.'
+        : "No he estat capaç de treure les dades del tiquet. Pot ser la foto, o pot ser que Google avui vagi tortuga. Reenvia-me-la una vegada més.";
+    }
+
+    await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);
+    try {
+      await (prisma as any).webhookEvent.update({
+        where: { messageId },
+        data: { status: 'ERROR', errorMessage: error.message }
+      });
+    } catch (dbError: any) {
+      console.warn('Failed to update webhookEvent status to ERROR:', dbError.message);
+    }
+  }
+}
 
 whatsappRouter.get('/webhook', (req, res) => {
   const mode = req.query['hub.mode'];
@@ -47,123 +251,66 @@ whatsappRouter.post('/webhook', async (req, res) => {
       if (!message) return;
 
       const messageId = message.id;
-      const senderPhone = message.from;
+      const senderPhone = normalizePhone(message.from);
       const messageType = message.type;
       const text = message.text?.body || '';
 
       console.log(`[Webhook] Processing ${messageType} from ${senderPhone}: "${text}" (ID: ${messageId})`);
 
-      // 3. Persistent Deduplication (Memory + DB)
       if (processedMessages.has(messageId)) {
         console.log(`[Deduplicator] Ignoring duplicate message (Memory): ${messageId}`);
         return;
       }
       processedMessages.add(messageId);
-      
+
       try {
         await (prisma as any).webhookEvent.create({
           data: { messageId, status: 'RECEIVED' }
         });
       } catch (dbError: any) {
-        // P2002 is Prisma unique constraint error
         if (dbError.code === 'P2002') {
           console.log(`[Deduplicator] Ignoring duplicate message (DB): ${messageId}`);
           return;
         }
         console.warn('DB Deduplication warning:', dbError.message);
       }
-      processedMessages.add(messageId);
 
-      // Log the incoming message for debugging
-      console.log(`[Webhook] Processing message ${messageId} from ${senderPhone}`);
-
-      // Extract text body if available for late use (language detection, etc.)
       const incomingText = message.text?.body || '';
+      let userRow = await prisma.user.findUnique({ where: { phone: senderPhone } });
+      let isNewUser = false;
 
-      // 4. Handle User Logic
-      let user = await userService.getUser(senderPhone);
-      if (!user) {
-        user = await userService.registerUser(senderPhone);
-        
-        // Language detection based on the first message
-        // Prioritize Catalan specific words to avoid false positives with "el"
-        const isCatalan = /\b(vull|meu|tiquet|amb|per|els)\b/i.test(incomingText);
-        const isSpanish = !isCatalan;
-        
-        // 1. Send welcome logo
+      if (!userRow) {
         try {
-          // Use the correct logo path in public/
-          const logoPath = path.join(process.cwd(), 'public', 'logo-tusecre_v2.jpg');
-          if (fs.existsSync(logoPath)) {
-            const mediaId = await whatsappService.uploadMedia(logoPath, 'image/jpeg');
-            await whatsappService.sendWhatsAppImage(senderPhone, mediaId);
+          userRow = await prisma.user.create({
+            data: {
+              phone: senderPhone,
+              status: 'FREE',
+              monthlyCount: 0,
+            },
+          });
+          isNewUser = true;
+        } catch (error: any) {
+          if (error?.code === 'P2002') {
+            userRow = await prisma.user.findUnique({ where: { phone: senderPhone } });
           } else {
-            console.warn('[Onboarding] Logo file not found at:', logoPath);
+            throw error;
           }
-        } catch (logoError) {
-          console.error('[Onboarding] Error sending welcome logo:', logoError);
         }
+      }
 
-        // 2. Welcome Message Sequence
-        if (isSpanish) {
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "¡Hola jefe! 👔 Soy TuSecre. Ya te he activado tu **mes de prueba gratis**. Mi misión es que no vuelvas a picar ni un ticket a mano."
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Cómo funciono: Cada vez que tengas un ticket o factura, **hazle una foto y mándamela por aquí mismo**. Yo leo el importe, el IVA y lo guardo todo por ti."
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Para probar, ¿por qué no me pasas una foto de un café o de una factura que tengas por ahí? ¡A ver qué tal leo! 📸\n\nPD: Si quieres que envíe el resumen a tu gestor automáticamente, dime: 'gestor elcorreo@detugestor.com'\n\nAl usar TuSecre, aceptas nuestra política de privacidad: https://tusecre.cat/politica"
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone,
-            "¡Ah! Y por cierto jefe, una cosa muy importante: **pásame tu NIF/CIF** cuando puedas. Así, si les haces fotos a tus propias facturas de venta, yo sabré que son tuyas y te las pondré en un apartado separado en tu resumen del Excel. ✨\n\nSolo tienes que escribirme: 'mi NIF es 12345678X' o 'CIF: B12345678'."
-          );
-        } else {
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Ei, jefe! 👔 Soc TuSecre. Ja t'he activat el teu **mes de prova de franc**. La meva missió és que no tornis a picar ni un tiquet a mà."
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Com funciona: Cada vegada que tinguis un tiquet o factura, **fes-li una foto i envia-me-la per aquí**. Jo llegiré l'import, l'IVA i ho guardaré tot per tu."
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone, 
-            "Per provar-ho, per què no m'envies una foto d'un cafè o d'una factura que tinguis a mà? A veure què tal llegeixo! 📸\n\nPD: Si vols que enviï el resum al teu gestor automàticament, digues-me: 'gestor elseu@email.com'\n\nEn utilitzar TuSecre, acceptes la nostra política de privacitat: https://tusecre.cat/politica"
-          );
-          await whatsappService.sendWhatsAppMessage(
-            senderPhone,
-            "Ah! I per cert jefe, una cosa molt important: **passa'm el teu NIF/CIF** quan puguis. Així, si fas fotos a les teves pròpies factures de venda, jo sabré que són teves i te les posaré en un apartat separat al teu resum de l'Excel. ✨\n\nNomés m'has d'escriure: 'el meu NIF és 12345678X' o 'CIF: B12345678'."
-          );
-        }
+      console.log('[Onboarding] senderPhone:', senderPhone, 'isNewUser:', isNewUser, 'userExists:', !!userRow);
 
-        // 3. Process the intent in the first message too (e.g. "gestor ...")
-        // Direct detection (Regex) to avoid 429 errors for simple commands
-        // Improved Regex to allow 'gestor:', 'gestor :', 'gestor=', etc.
-        const managerRegex = /gestor[:\s=]*([^\s@]+@[^\s@]+\.[^\s@]+)/i;
-        const match = incomingText.match(managerRegex);
-        
-        if (match) {
-            const email = match[1];
-            await userService.updateAccountantEmail(senderPhone, email);
-            const successMsg = isSpanish 
-                ? `¡Perfecto jefe! He guardado ${email} como tu gestor.` 
-                : `Perfecte jefe! He guardat ${email} com el teu gestor.`;
-            await whatsappService.sendWhatsAppMessage(senderPhone, successMsg);
-        }
-        
-        // We SKIP Gemini fallback and history saving for new users to avoid 429 crashes 
-        // during the initial welcome sequence.
-
+      if (isNewUser) {
+        await sendWelcomeSequence(senderPhone, incomingText);
         return;
       }
 
-      // 4.5. Check Trial Expiration for existing FREE users
-      // This applies to both TEXT and IMAGE messages
+      if (!userRow) {
+        throw new Error(`User row missing after create-or-load for ${senderPhone}`);
+      }
+
+      const user = userRow;
+
       if (user.status === 'FREE') {
         const trialDays = 30;
         const createdAt = new Date(user.createdAt);
@@ -173,8 +320,8 @@ whatsappRouter.post('/webhook', async (req, res) => {
         
         if (diffDays > trialDays) {
           try {
-            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(incomingText);
-            const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo|pasa|por|papeleo)\b/i.test(incomingText));
+            const isCatalan = detectCatalan(incomingText);
+            const isSpanish = !isCatalan && detectSpanish(incomingText);
             
             const shortUrl = `${process.env.BASE_URL || 'https://la-secre-hazel.vercel.app'}/p/${senderPhone}`;
             
@@ -208,8 +355,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
 
         // --- DIRECT COMMAND DETECTION (NO-IA) ---
         // Improved Regex to allow 'gestor:', 'gestor :', 'gestor=', etc.
-        const managerRegex = /gestor[:\s=]*([^\s@]+@[^\s@]+\.[^\s@]+)/i;
-        const match = text.match(managerRegex);
+        const match = text.match(MANAGER_REGEX);
 
         let result: any = { resposta: '', intent: 'NONE' };
 
@@ -217,8 +363,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
             const email = match[1];
             await userService.updateAccountantEmail(senderPhone, email);
             const historyText = history.map((m: any) => m.content).join(' ');
-            const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text) || 
-                             (/[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(historyText));
+            const isCatalan = detectCatalan(text) || detectCatalan(historyText);
 
             result.resposta = isCatalan 
                 ? `Fet jefe! He guardat ${email} a la teva fitxa. A partir d'ara, quan demanis el resum l'enviaré directament aquí.`
@@ -245,8 +390,10 @@ whatsappRouter.post('/webhook', async (req, res) => {
             result.intent = 'OPT_IN_REMINDERS';
 
         } else {
-            // Only call Gemini if it's not a direct command
-            result = await geminiService.chatWithContext(formattedHistory, text);
+            // Fiscal questions can enrich the answer with AEAT research, otherwise use normal chat
+            result = fiscalChatService.looksLikeFiscalQuestion(text)
+              ? await fiscalChatService.chatWithFiscalContext(formattedHistory, text)
+              : await geminiService.chatWithContext(formattedHistory, text);
         }
 
         // Save user message
@@ -268,13 +415,7 @@ whatsappRouter.post('/webhook', async (req, res) => {
           }
         }
 
-        // Determine language context: prioritize current message language
-        // (historyText removed here as it was redundant/declaring in same scope)
-        
-        // Check for Catalan markers like apostrophes or unique letters
-        const isCatalan = /[l|d]'|'m |ny|l·l|\b(el|la|meu|resum|vull|puc)\b/i.test(text);
-        const isSpanish = !isCatalan && (/[¿¡]|\b(el|la|mi|resumen|quiero|puedo)\b/i.test(text));
-        const finalIsSpanish = (isSpanish && !isCatalan) || (!isSpanish && !isCatalan && /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(history.map((m: any) => m.content).join(' ')));
+        const finalIsSpanish = prefersSpanish(text, history.map((m: any) => m.content).join(' '));
 
         if (result.intent === 'EXPORT_QUARTER') {
           // Send the explanatory message first (from Gemini)
@@ -434,111 +575,18 @@ whatsappRouter.post('/webhook', async (req, res) => {
           take: 2
         });
         const historyText = lastMessages.map((m: any) => m.content).join(' ');
-        const isSpanish = /[¿¡]|\b(y|el|los|las|por|con|pero|como)\b/i.test(historyText);
-        const langHint = isSpanish ? "Castellano" : "Català";
+        const isSpanish = prefersSpanish('', historyText);
+        const langHint = isSpanish ? 'Castellano' : 'Català';
 
-        // Trial check now handled globally above
-
-
-        const mediaId = message.image.id;
-        const waitMsg = isSpanish ? "Lo estoy mirando... un momento." : "Ho estic mirant... un moment.";
-        await whatsappService.sendWhatsAppMessage(senderPhone, waitMsg);
-        // 4. Background processing logic
-        try {
-          // Register as PROCESSING immediately
-          await (prisma as any).webhookEvent.upsert({
-            where: { messageId },
-            update: { status: 'PROCESSING' },
-            create: { messageId, status: 'PROCESSING' }
-          });
-
-          const base64Image = await whatsappService.downloadMedia(mediaId);
-          const userNif = currentUser?.nif || undefined;
-          const analysis = await geminiService.analyzeReceipt(base64Image, langHint, userNif);
-
-          // Save image to public folder to allow Airtable to download it
-          const host = req.get('host');
-          const baseUrl = process.env.PUBLIC_URL || `https://${host}`;
-          const uploadsDir = path.join(process.cwd(), 'public', 'temp_uploads');
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          const imagePath = path.join(uploadsDir, `${mediaId}.jpg`);
-          fs.writeFileSync(imagePath, Buffer.from(base64Image, 'base64'));
-
-          const finalImageUrl = `${baseUrl}/temp_uploads/${mediaId}.jpg`;
-
-          await (prisma as any).receipt.create({
-            data: {
-              userPhone: senderPhone,
-              merchant: analysis.comerç,
-              date: analysis.data,
-              total: Number(analysis.import_total || 0),
-              vat: Number(analysis.import_iva || 0),
-              vatPercentage: Number(analysis.percentatge_iva || 0),
-              baseAmount: Number(analysis.base_imposable || 0),
-              category: analysis.categoria,
-              cif: analysis.cif,
-              invoiceNumber: analysis.numero_factura,
-              invoiceType: analysis.tipus_document,
-              imageUrl: finalImageUrl,
-              type: analysis.tipus === 'VENDA' ? 'SALE' : 'PURCHASE',
-              retentionAmount: analysis.import_retencio || 0,
-              retentionPercentage: analysis.percentatge_retencio || 0
-            }
-          });
-
-          // --- Save to Airtable (Permanent storage with images) ---
-          try {
-            await airtableService.createTicket({
-              ...analysis,
-              phone: senderPhone,
-              imageUrl: finalImageUrl
-            });
-            console.log('[Airtable] Ticket created successfully');
-          } catch (airtableError: any) {
-            console.error('[Airtable] Error saving ticket:', airtableError.message);
-          }
-
-          await userService.incrementMonthlyCount(senderPhone);
-          const responseMsg = analysis.resposta_lasecre || `¡Recibido! He registrado tu gasto de ${analysis.import_total} € en ${analysis.comerç}. Ya lo tienes en tu panel de Effiguard. Recuerda guardar el papel en tu carpeta de seguridad.`;
-          await whatsappService.sendWhatsAppMessage(senderPhone, responseMsg);
-
-          // Update status to PROCESSED
-          await (prisma as any).webhookEvent.update({
-            where: { messageId },
-            data: { status: 'PROCESSED' }
-          });
-
-        } catch (error: any) {
-          console.error('Error processing receipt:', error);
-          
-          // Check for quota errors (429) to be transparent with the user
-          const isQuotaError = error.message?.includes('429') || 
-                               (error.response?.data?.error?.message?.includes('quota')) ||
-                               (JSON.stringify(error).includes('429'));
-
-          let errorMsg = isSpanish 
-             ? "Oye jefe, esta foto está muy borrosa y no veo nada. Vuelve a intentarlo o Hacienda no te devolverá ni un céntimo de esto."
-             : "Escolta, jefe, aquesta foto està més moguda que un ball de festa major. Torna-m'hi a provar o Hisenda no et tornarà ni un cèntim d'això.";
-
-          if (isQuotaError) {
-            errorMsg = isSpanish
-              ? "¡Ostras jefe! Google me ha cortado el grifo (error de cuota). Espérate un minuto y vuelve a mandarme la foto, que ahora mismo estoy colapsada."
-              : "Ostres jefe! Google m'ha tallat l'aixeta (error de quota). Espera't un minut i torna'm a enviar la foto, que ara mateix estic col·lapsada.";
-          }
-
-          await whatsappService.sendWhatsAppMessage(senderPhone, errorMsg);
-          // Optionally update status to ERROR here
-          try {
-            await (prisma as any).webhookEvent.update({
-              where: { messageId },
-              data: { status: 'ERROR', errorMessage: (error as any).message }
-            });
-          } catch (dbError) {
-            console.warn('Failed to update webhookEvent status to ERROR:', (dbError as any).message);
-          }
-        }
+        await processReceiptImage({
+          senderPhone,
+          messageId,
+          mediaId: message.image.id,
+          langHint,
+          isSpanish,
+          userNif: currentUser?.nif || undefined,
+          host: req.get('host') || undefined,
+        });
       }
     } catch (error: any) {
       const errorDetails = error.response?.data ? JSON.stringify(error.response.data) : error.message;

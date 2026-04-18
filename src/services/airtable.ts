@@ -1,5 +1,17 @@
 import axios from 'axios';
 
+const formatAirtableList = (value: unknown, formatter?: (item: any) => string) => {
+  if (!Array.isArray(value) || value.length === 0) return '';
+  return value
+    .map((item) => {
+      if (formatter) return formatter(item);
+      if (typeof item === 'string') return item;
+      return JSON.stringify(item);
+    })
+    .filter(Boolean)
+    .join('\n');
+};
+
 const getAirtableConfig = () => ({
   apiKey: (process.env.AIRTABLE_API_KEY || '').trim(),
   baseId: (process.env.AIRTABLE_BASE_ID || '').trim(),
@@ -33,15 +45,24 @@ export const createTicket = async (data: any) => {
               'Import_Retencio': data.import_retencio || 0,
               'Percentatge_Retencio': data.percentatge_retencio || 0,
               'Categoria': data.categoria || '',
-              'Estat': 'Pendent',
+              'Estat': data.reviewRequired ? 'Revisar' : 'Pendent',
               'Tipus': data.tipus || 'COMPRA',
+              'AEAT_Resum': data.aeatSummary || '',
+              'AEAT_Fonts': formatAirtableList(data.aeatSources),
+              'Validation_Issues': formatAirtableList(
+                data.validationIssues,
+                (issue) => issue?.code && issue?.message ? `${issue.code}: ${issue.message}` : ''
+              ),
+              'Name': data.comerç || data.numero_factura || data.cif || `Ticket ${new Date().toISOString().slice(0, 10)}`,
               // Airtable Attachment field expects an array of objects with a 'url' property
               // We'll use 'Foto' as the field name for the attachment
-              'Foto': [
-                {
-                  url: data.imageUrl
-                }
-              ]
+              'Foto': data.imageUrl
+                ? [
+                    {
+                      url: data.imageUrl
+                    }
+                  ]
+                : []
             },
           },
         ],
